@@ -20,14 +20,13 @@ public sealed class ShapeRectangleItem : IInventoryItem, IWorkspacePlaceableInve
 
     public void PlaceOnWorkspace(WorkspaceViewModel workspace, Point position)
     {
-        const double width = 180;
-        const double height = 100;
+        const double size = 60;
         workspace.Shapes.Add(new WorkspaceShapeViewModel(
             WorkspaceShapeKind.Rectangle,
-            x: position.X - (width / 2),
-            y: position.Y - (height / 2),
-            width: width,
-            height: height,
+            x: position.X - (size / 2),
+            y: position.Y - (size / 2),
+            width: size,
+            height: size,
             displayName: DisplayName));
     }
 }

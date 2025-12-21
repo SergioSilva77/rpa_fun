@@ -20,7 +20,7 @@ public sealed class ShapeSquareItem : IInventoryItem, IWorkspacePlaceableInvento
 
     public void PlaceOnWorkspace(WorkspaceViewModel workspace, Point position)
     {
-        const double size = 120;
+        const double size = 60;
         workspace.Shapes.Add(new WorkspaceShapeViewModel(
             WorkspaceShapeKind.Square,
             x: position.X - (size / 2),

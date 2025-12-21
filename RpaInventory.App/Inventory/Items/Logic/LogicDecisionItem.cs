@@ -20,7 +20,7 @@ public sealed class LogicDecisionItem : IInventoryItem, IWorkspacePlaceableInven
 
     public void PlaceOnWorkspace(WorkspaceViewModel workspace, Point position)
     {
-        const double size = 120;
+        const double size = 60;
         workspace.Shapes.Add(new WorkspaceShapeViewModel(
             WorkspaceShapeKind.LogicDecision,
             x: position.X - (size / 2),

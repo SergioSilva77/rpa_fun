@@ -20,7 +20,7 @@ public sealed class ShapeDiamondItem : IInventoryItem, IWorkspacePlaceableInvent
 
     public void PlaceOnWorkspace(WorkspaceViewModel workspace, Point position)
     {
-        const double size = 140;
+        const double size = 60;
         workspace.Shapes.Add(new WorkspaceShapeViewModel(
             WorkspaceShapeKind.Diamond,
             x: position.X - (size / 2),

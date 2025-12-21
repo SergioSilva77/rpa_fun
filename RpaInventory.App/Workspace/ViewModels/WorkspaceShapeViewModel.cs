@@ -6,7 +6,7 @@ namespace RpaInventory.App.Workspace.ViewModels;
 
 public sealed class WorkspaceShapeViewModel : ViewModelBase, IMovableWorkspaceSurface
 {
-    private const double MinSize = 50;
+    private const double MinSize = 60;
     private bool _isSelected;
     private double _x;
     private double _y;

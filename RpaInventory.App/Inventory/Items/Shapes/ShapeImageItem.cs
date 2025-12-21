@@ -20,13 +20,12 @@ public sealed class ShapeImageItem : IInventoryItem, IWorkspacePlaceableInventor
 
     public void PlaceOnWorkspace(WorkspaceViewModel workspace, Point position)
     {
-        const double width = 200;
-        const double height = 140;
+        const double size = 60;
         workspace.Images.Add(new WorkspaceImageViewModel(
-            x: position.X - (width / 2),
-            y: position.Y - (height / 2),
-            width: width,
-            height: height,
+            x: position.X - (size / 2),
+            y: position.Y - (size / 2),
+            width: size,
+            height: size,
             source: null,
             displayName: DisplayName));
     }

@@ -56,6 +56,8 @@ public partial class MainWindow : Window, IExecutionContext
     private bool _isPanning;
     private Point _panStartViewport;
 
+    private IInventoryItem? _selectedBackpackItem;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -115,8 +117,62 @@ public partial class MainWindow : Window, IExecutionContext
             return;
         }
 
+        if (e.Key == Key.Escape && !e.IsRepeat)
+        {
+            if (_selectedBackpackItem is not null)
+            {
+                _selectedBackpackItem = null;
+                WorkspaceCanvas.Cursor = Cursors.Arrow;
+                e.Handled = true;
+                return;
+            }
+        }
+
+        if (TryHandleBackpackSelection(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (TryHandleHotbarAssign(e))
             return;
+    }
+
+    private bool TryHandleBackpackSelection(KeyEventArgs e)
+    {
+        var viewModel = ViewModel;
+        if (viewModel is null || viewModel.IsInventoryOpen)
+            return false;
+
+        var slotIndex = e.Key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            Key.D6 or Key.NumPad6 => 5,
+            Key.D7 or Key.NumPad7 => 6,
+            _ => -1,
+        };
+
+        if (slotIndex < 0 || slotIndex >= viewModel.BackpackSlots.Count)
+            return false;
+
+        var slot = viewModel.BackpackSlots[slotIndex];
+        _selectedBackpackItem = slot.Item;
+
+        if (_selectedBackpackItem is not null)
+        {
+            WorkspaceCanvas.Cursor = Cursors.Cross;
+        }
+        else
+        {
+            _selectedBackpackItem = null;
+            WorkspaceCanvas.Cursor = Cursors.Arrow;
+        }
+
+        return true;
     }
 
     private bool TryHandleHotbarAssign(KeyEventArgs e)
@@ -295,13 +351,31 @@ public partial class MainWindow : Window, IExecutionContext
         var dropViewport = e.GetPosition(WorkspaceCanvas);
         var dropWorld = ViewportToWorld(dropViewport);
 
+        PlaceItemOnWorkspace(item, dropWorld);
+        e.Handled = true;
+    }
+
+    private void PlaceItemOnWorkspace(IInventoryItem item, Point worldPoint)
+    {
+        if (Workspace is null || ViewModel is null)
+            return;
+
         if (item is IWorkspacePlaceableInventoryItem placeable)
-            placeable.PlaceOnWorkspace(Workspace, dropWorld);
+            placeable.PlaceOnWorkspace(Workspace, worldPoint);
         else
             ViewModel.AddToWorkspace(item);
 
         UpdateScrollbars();
-        e.Handled = true;
+    }
+
+    private void PlaceSelectedBackpackItem(Point worldPoint)
+    {
+        if (_selectedBackpackItem is null)
+            return;
+
+        PlaceItemOnWorkspace(_selectedBackpackItem, worldPoint);
+        _selectedBackpackItem = null;
+        WorkspaceCanvas.Cursor = Cursors.Arrow;
     }
 
     private static void SetDragFeedback(DragEventArgs e, bool allowDrop)
@@ -583,6 +657,13 @@ public partial class MainWindow : Window, IExecutionContext
         {
             StartPan(e.GetPosition(WorkspaceCanvas));
             WorkspaceCanvas.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+
+        if (_selectedBackpackItem is not null && IsWorkspaceBackgroundClick(e))
+        {
+            PlaceSelectedBackpackItem(_lastWorkspaceMouseWorld);
             e.Handled = true;
             return;
         }
