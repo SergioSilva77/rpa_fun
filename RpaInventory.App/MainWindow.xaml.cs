@@ -52,6 +52,10 @@ public partial class MainWindow : Window, IExecutionContext
     private bool _isUpdatingScrollbars;
     private LineFlowSimulator? _lineFlowSimulator;
 
+    private bool _isSpaceDown;
+    private bool _isPanning;
+    private Point _panStartViewport;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -90,6 +94,13 @@ public partial class MainWindow : Window, IExecutionContext
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Space && !e.IsRepeat)
+        {
+            _isSpaceDown = true;
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.E && !e.IsRepeat)
         {
             ViewModel?.ToggleInventory();
@@ -139,6 +150,19 @@ public partial class MainWindow : Window, IExecutionContext
 
     private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Space)
+        {
+            _isSpaceDown = false;
+            if (_isPanning)
+            {
+                _isPanning = false;
+                WorkspaceCanvas.ReleaseMouseCapture();
+                WorkspaceCanvas.Cursor = Cursors.Arrow;
+            }
+            e.Handled = true;
+            return;
+        }
+
         if (!_isDraftingLine)
             return;
 
@@ -381,6 +405,30 @@ public partial class MainWindow : Window, IExecutionContext
         UpdateScrollbars();
     }
 
+    private void StartPan(Point viewportPoint)
+    {
+        _isPanning = true;
+        _panStartViewport = viewportPoint;
+        WorkspaceCanvas.Cursor = Cursors.Hand;
+    }
+
+    private void UpdatePan(Point currentViewportPoint)
+    {
+        if (!_isPanning)
+            return;
+
+        var deltaViewport = currentViewportPoint - _panStartViewport;
+        var matrix = WorldTransform.Matrix;
+        var scale = GetWorldScale(matrix);
+
+        var currentTopLeft = ViewportToWorld(new Point(0, 0));
+        var deltaWorld = new Vector(deltaViewport.X / scale, deltaViewport.Y / scale);
+
+        SetPan(worldX0: currentTopLeft.X - deltaWorld.X, worldY0: currentTopLeft.Y - deltaWorld.Y);
+
+        _panStartViewport = currentViewportPoint;
+    }
+
     private void UpdateScrollbars()
     {
         if (Workspace is null)
@@ -531,6 +579,14 @@ public partial class MainWindow : Window, IExecutionContext
         WorkspaceCanvas.Focus();
         _lastWorkspaceMouseWorld = ViewportToWorld(e.GetPosition(WorkspaceCanvas));
 
+        if (_isSpaceDown)
+        {
+            StartPan(e.GetPosition(WorkspaceCanvas));
+            WorkspaceCanvas.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+
         if (!IsWorkspaceBackgroundClick(e))
             return;
 
@@ -553,6 +609,13 @@ public partial class MainWindow : Window, IExecutionContext
     private void WorkspaceCanvas_MouseMove(object sender, MouseEventArgs e)
     {
         _lastWorkspaceMouseWorld = ViewportToWorld(e.GetPosition(WorkspaceCanvas));
+
+        if (_isPanning)
+        {
+            UpdatePan(e.GetPosition(WorkspaceCanvas));
+            e.Handled = true;
+            return;
+        }
 
         if (_isDraftingLine)
         {
@@ -579,6 +642,15 @@ public partial class MainWindow : Window, IExecutionContext
 
     private void WorkspaceCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_isPanning)
+        {
+            _isPanning = false;
+            WorkspaceCanvas.ReleaseMouseCapture();
+            WorkspaceCanvas.Cursor = Cursors.Arrow;
+            e.Handled = true;
+            return;
+        }
+
         if (_isDraftingLine)
         {
             FinalizeDraftLine(_lastWorkspaceMouseWorld);
