@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Inventory.ViewModels;
+using RpaInventory.App.Settings;
 using RpaInventory.App.Workspace.Geometry;
 using RpaInventory.App.Workspace.Simulation;
 using RpaInventory.App.Workspace.ViewModels;
@@ -57,6 +58,7 @@ public partial class MainWindow : Window, IExecutionContext
     private Point _panStartViewport;
 
     private IInventoryItem? _selectedBackpackItem;
+    private SettingsViewModel _settings = SettingsViewModel.Default;
 
     public MainWindow()
     {
@@ -1257,6 +1259,81 @@ public partial class MainWindow : Window, IExecutionContext
         e.Handled = true;
     }
 
+    private void WorkspaceShape_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (Workspace is null)
+            return;
+
+        if (sender is not FrameworkElement element)
+            return;
+
+        if (element.DataContext is not WorkspaceShapeViewModel shape)
+            return;
+
+        if (!shape.IsSelected)
+            return;
+
+        ShowPrettyFormatMenu(e.GetPosition(WorkspaceCanvas));
+        e.Handled = true;
+    }
+
+    private void WorkspaceImage_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (Workspace is null)
+            return;
+
+        if (sender is not FrameworkElement element)
+            return;
+
+        if (element.DataContext is not WorkspaceImageViewModel image)
+            return;
+
+        if (!image.IsSelected)
+            return;
+
+        ShowPrettyFormatMenu(e.GetPosition(WorkspaceCanvas));
+        e.Handled = true;
+    }
+
+    private void ShowPrettyFormatMenu(Point position)
+    {
+        var menu = new ContextMenu
+        {
+            PlacementTarget = WorkspaceCanvas,
+            Placement = PlacementMode.MousePoint,
+            VerticalOffset = 14,
+        };
+
+        var formatItem = new MenuItem { Header = "Formato Bonito" };
+        formatItem.Click += (_, _) => ApplyPrettyFormat();
+
+        menu.Items.Add(formatItem);
+        menu.IsOpen = true;
+    }
+
+    private void ApplyPrettyFormat()
+    {
+        if (Workspace is null)
+            return;
+
+        var formatter = new RpaInventory.App.Workspace.Formatting.PrettyFormatter(Workspace, _settings);
+        formatter.FormatSelection();
+        UpdateScrollbars();
+    }
+
+    private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var settingsWindow = new SettingsWindow(_settings)
+        {
+            Owner = this
+        };
+
+        if (settingsWindow.ShowDialog() == true)
+        {
+            // Configurações já foram atualizadas no ViewModel
+        }
+    }
+
     private void BeginSelectionDrag(LineViewModel? primaryLineForSnap, Point startViewport)
     {
         _isDraggingSelection = true;
@@ -1710,28 +1787,64 @@ public partial class MainWindow : Window, IExecutionContext
         var top = surface.Y;
         var right = surface.X + surface.Width;
         var bottom = surface.Y + surface.Height;
+        var centerX = surface.X + (surface.Width / 2);
+        var centerY = surface.Y + (surface.Height / 2);
 
-        var clampedX = Math.Clamp(point.X, left, right);
-        var clampedY = Math.Clamp(point.Y, top, bottom);
+        // Pontos de snap: 4 vértices + 4 meios das arestas
+        var snapPoints = new[]
+        {
+            new Point(left, top),      // Vértice top-left
+            new Point(centerX, top),    // Meio topo
+            new Point(right, top),      // Vértice top-right
+            new Point(right, centerY),  // Meio direita
+            new Point(right, bottom),   // Vértice bottom-right
+            new Point(centerX, bottom), // Meio baixo
+            new Point(left, bottom),   // Vértice bottom-left
+            new Point(left, centerY),  // Meio esquerda
+        };
 
-        var inside = point.X >= left && point.X <= right && point.Y >= top && point.Y <= bottom;
-        if (!inside)
-            return new Point(clampedX, clampedY);
+        // Encontrar o ponto de snap mais próximo
+        var bestPoint = snapPoints[0];
+        var minDistance = (point - bestPoint).Length;
 
-        var dLeft = point.X - left;
-        var dRight = right - point.X;
-        var dTop = point.Y - top;
-        var dBottom = bottom - point.Y;
+        foreach (var snapPoint in snapPoints)
+        {
+            var distance = (point - snapPoint).Length;
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                bestPoint = snapPoint;
+            }
+        }
 
-        var min = Math.Min(Math.Min(dLeft, dRight), Math.Min(dTop, dBottom));
-        if (min == dLeft)
-            return new Point(left, clampedY);
-        if (min == dRight)
-            return new Point(right, clampedY);
-        if (min == dTop)
-            return new Point(clampedX, top);
+        // Se estiver muito longe, usar o comportamento original
+        var threshold = 10.0; // pixels em world
+        if (minDistance > threshold)
+        {
+            var clampedX = Math.Clamp(point.X, left, right);
+            var clampedY = Math.Clamp(point.Y, top, bottom);
 
-        return new Point(clampedX, bottom);
+            var inside = point.X >= left && point.X <= right && point.Y >= top && point.Y <= bottom;
+            if (!inside)
+                return new Point(clampedX, clampedY);
+
+            var dLeft = point.X - left;
+            var dRight = right - point.X;
+            var dTop = point.Y - top;
+            var dBottom = bottom - point.Y;
+
+            var min = Math.Min(Math.Min(dLeft, dRight), Math.Min(dTop, dBottom));
+            if (min == dLeft)
+                return new Point(left, clampedY);
+            if (min == dRight)
+                return new Point(right, clampedY);
+            if (min == dTop)
+                return new Point(clampedX, top);
+
+            return new Point(clampedX, bottom);
+        }
+
+        return bestPoint;
     }
 
     private static Point GetClosestPointOnShape(WorkspaceShapeViewModel shape, Point point)
@@ -1767,12 +1880,42 @@ public partial class MainWindow : Window, IExecutionContext
         var cy = start.Y + (start.Height / 2);
         var radius = Math.Max(1, Math.Min(start.Width, start.Height) / 2);
 
-        var v = new Vector(point.X - cx, point.Y - cy);
-        if (v.Length <= double.Epsilon)
-            return new Point(cx + radius, cy);
+        // 4 pontos de snap: topo, direita, baixo, esquerda (formando um +)
+        var snapPoints = new[]
+        {
+            new Point(cx, start.Y),                    // Topo
+            new Point(start.X + start.Width, cy),      // Direita
+            new Point(cx, start.Y + start.Height),     // Baixo
+            new Point(start.X, cy),                     // Esquerda
+        };
 
-        v.Normalize();
-        return new Point(cx + (v.X * radius), cy + (v.Y * radius));
+        // Encontrar o ponto de snap mais próximo
+        var bestPoint = snapPoints[0];
+        var minDistance = (point - bestPoint).Length;
+
+        foreach (var snapPoint in snapPoints)
+        {
+            var distance = (point - snapPoint).Length;
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                bestPoint = snapPoint;
+            }
+        }
+
+        // Se estiver muito longe, usar projeção radial normal
+        var threshold = 10.0; // pixels em world
+        if (minDistance > threshold)
+        {
+            var v = new Vector(point.X - cx, point.Y - cy);
+            if (v.Length <= double.Epsilon)
+                return new Point(cx + radius, cy);
+
+            v.Normalize();
+            return new Point(cx + (v.X * radius), cy + (v.Y * radius));
+        }
+
+        return bestPoint;
     }
 
     private void ShowSnapPreview(SnapCandidate? candidate)

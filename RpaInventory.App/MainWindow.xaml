@@ -169,7 +169,8 @@
                   Background="Transparent"
                   MouseLeftButtonDown="WorkspaceShape_MouseLeftButtonDown"
                   MouseMove="WorkspaceShape_MouseMove"
-                  MouseLeftButtonUp="WorkspaceShape_MouseLeftButtonUp">
+                  MouseLeftButtonUp="WorkspaceShape_MouseLeftButtonUp"
+                  MouseRightButtonDown="WorkspaceShape_MouseRightButtonDown">
                 <Rectangle x:Name="RectShape"
                            RadiusX="2"
                            RadiusY="2"
@@ -225,7 +226,8 @@
                   Background="Transparent"
                   MouseLeftButtonDown="WorkspaceImage_MouseLeftButtonDown"
                   MouseMove="WorkspaceImage_MouseMove"
-                  MouseLeftButtonUp="WorkspaceImage_MouseLeftButtonUp">
+                  MouseLeftButtonUp="WorkspaceImage_MouseLeftButtonUp"
+                  MouseRightButtonDown="WorkspaceImage_MouseRightButtonDown">
                 <Border x:Name="ImageBorder"
                         Background="#FF6A6A6A"
                         BorderBrush="#FF2D2D2D"
@@ -355,6 +357,16 @@
     </Window.Resources>
 
     <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <Menu Grid.Row="0" Background="#FF2B2B2B" Foreground="#FFF6F6F6" Margin="0,0,0,5">
+            <MenuItem Header="Configurações" Click="SettingsMenuItem_Click" />
+        </Menu>
+        
+        <Grid Grid.Row="1">
         <Button x:Name="StartButton"
                 Content="START"
                 Width="140"
@@ -692,5 +704,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Border>
+        </Grid>
     </Grid>
 </Window>
