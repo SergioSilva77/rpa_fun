@@ -13,6 +13,8 @@ public sealed class MainViewModel : ViewModelBase
     public const int SlotColumns = 7;
     public const int SlotRows = 30;
     public const int SlotCount = SlotColumns * SlotRows;
+    public const int VisibleSlotRows = 10;
+    public const int VisibleSlotCount = SlotColumns * VisibleSlotRows;
     public const int BackpackSlotCount = 7;
 
     private readonly IInventoryCatalog _catalog;
@@ -43,6 +45,7 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<SectionViewModel> TopSections { get; }
     public ObservableCollection<SectionViewModel> BottomSections { get; }
     public ObservableCollection<SlotViewModel> Slots { get; }
+    public IEnumerable<SlotViewModel> VisibleSlots => Slots.Take(VisibleSlotCount);
     public ObservableCollection<SlotViewModel> BackpackSlots { get; }
     public ObservableCollection<IInventoryItem> WorkspaceItems { get; }
     public WorkspaceViewModel Workspace { get; }

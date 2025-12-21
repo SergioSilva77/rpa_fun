@@ -629,10 +629,11 @@
                         BorderBrush="#FF4A4A4A"
                         BorderThickness="2"
                         CornerRadius="6"
-                        Padding="6">
+                        Padding="6"
+                        HorizontalAlignment="Center">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
-                                  Height="480">
+                                  MaxHeight="200">
                         <ItemsControl ItemsSource="{Binding Slots}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>

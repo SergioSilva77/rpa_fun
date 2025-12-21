@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Sérgio\\Desktop\\Chatgpt\\RpaInventory.App\\RpaInventory.App.csproj",
+      "projectUniqueName": "C:\\Users\\Sérgio\\Documents\\git\\rpa_ultimate\\rpa_fun\\RpaInventory.App\\RpaInventory.App.csproj",
       "projectName": "RpaInventory.App",
-      "projectPath": "C:\\Users\\Sérgio\\Desktop\\Chatgpt\\RpaInventory.App\\RpaInventory.App.csproj",
+      "projectPath": "C:\\Users\\Sérgio\\Documents\\git\\rpa_ultimate\\rpa_fun\\RpaInventory.App\\RpaInventory.App.csproj",
       "packagesPath": "C:\\Users\\Sérgio\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Sérgio\\Desktop\\Chatgpt\\RpaInventory.App\\obj\\",
+      "outputPath": "C:\\Users\\Sérgio\\Documents\\git\\rpa_ultimate\\rpa_fun\\RpaInventory.App\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
