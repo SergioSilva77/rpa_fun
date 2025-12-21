@@ -8,10 +8,10 @@ public enum InventorySectionId
     Programs,
     Scripts,
     Rpa,
+    Shapes,
     Misc,
     Bottom1,
     Bottom2,
     Bottom3,
     Bottom4,
 }
-

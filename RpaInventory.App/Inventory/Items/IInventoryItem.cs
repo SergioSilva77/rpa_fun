@@ -18,3 +18,7 @@ public interface IInventoryItem
     void Execute(IExecutionContext context);
 }
 
+public interface IWorkspacePlaceableInventoryItem
+{
+    void PlaceOnWorkspace(RpaInventory.App.Workspace.ViewModels.WorkspaceViewModel workspace, System.Windows.Point position);
+}

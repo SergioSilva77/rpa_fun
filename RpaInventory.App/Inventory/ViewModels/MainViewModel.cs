@@ -4,6 +4,7 @@ using System.Windows.Input;
 using RpaInventory.App.Inventory.Catalog;
 using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Inventory.Sections;
+using RpaInventory.App.Workspace.ViewModels;
 
 namespace RpaInventory.App.Inventory.ViewModels;
 
@@ -12,9 +13,11 @@ public sealed class MainViewModel : ViewModelBase
     public const int SlotColumns = 7;
     public const int SlotRows = 30;
     public const int SlotCount = SlotColumns * SlotRows;
+    public const int BackpackSlotCount = 7;
 
     private readonly IInventoryCatalog _catalog;
     private InventorySectionId _selectedSectionId;
+    private bool _isInventoryOpen = true;
 
     public MainViewModel(IInventoryCatalog catalog)
     {
@@ -26,8 +29,11 @@ public sealed class MainViewModel : ViewModelBase
             catalog.BottomSections.Select(section => new SectionViewModel(section.Id, section.DisplayName, section.Icon, section.IconText)));
 
         Slots = new ObservableCollection<SlotViewModel>(Enumerable.Range(0, SlotCount).Select(index => new SlotViewModel(index)));
+        BackpackSlots = new ObservableCollection<SlotViewModel>(Enumerable.Range(0, BackpackSlotCount).Select(index => new SlotViewModel(index)));
         WorkspaceItems = new ObservableCollection<IInventoryItem>();
         WorkspaceItems.CollectionChanged += WorkspaceItems_CollectionChanged;
+
+        Workspace = new WorkspaceViewModel();
 
         SelectSectionCommand = new RelayCommand<SectionViewModel>(SelectSection);
 
@@ -37,7 +43,9 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<SectionViewModel> TopSections { get; }
     public ObservableCollection<SectionViewModel> BottomSections { get; }
     public ObservableCollection<SlotViewModel> Slots { get; }
+    public ObservableCollection<SlotViewModel> BackpackSlots { get; }
     public ObservableCollection<IInventoryItem> WorkspaceItems { get; }
+    public WorkspaceViewModel Workspace { get; }
 
     public ICommand SelectSectionCommand { get; }
 
@@ -47,12 +55,21 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _selectedSectionId, value);
     }
 
+    public bool IsInventoryOpen
+    {
+        get => _isInventoryOpen;
+        set => SetProperty(ref _isInventoryOpen, value);
+    }
+
     public bool IsWorkspaceEmpty => WorkspaceItems.Count == 0;
 
     public void AddToWorkspace(IInventoryItem item)
     {
         WorkspaceItems.Add(item);
     }
+
+    public void ToggleInventory()
+        => IsInventoryOpen = !IsInventoryOpen;
 
     private void SelectSection(SectionViewModel section)
     {

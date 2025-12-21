@@ -5,13 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:inv="clr-namespace:RpaInventory.App.Inventory.Items"
         xmlns:vm="clr-namespace:RpaInventory.App.Inventory.ViewModels"
+        xmlns:wvm="clr-namespace:RpaInventory.App.Workspace.ViewModels"
         mc:Ignorable="d"
         Title="Inventário RPA"
         Height="720"
         Width="1200"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#FF1B1B1B">
+        Background="#FF1B1B1B"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        PreviewKeyUp="MainWindow_PreviewKeyUp">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -73,6 +76,10 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="BackpackSlotBorderStyle" TargetType="{x:Type Border}" BasedOn="{StaticResource SlotBorderStyle}">
+            <Setter Property="Background" Value="#FF7E7E7E" />
+        </Style>
+
         <DataTemplate x:Key="IconTemplate">
             <Grid Width="28" Height="28">
                 <Viewbox x:Name="IconBox" Stretch="Uniform">
@@ -95,12 +102,12 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <DataTemplate x:Key="WorkspaceItemTemplate">
+        <DataTemplate x:Key="WorkspaceItemTemplate" DataType="{x:Type inv:IInventoryItem}">
             <Border Background="#FF303030"
                     BorderBrush="#FF5A5A5A"
                     BorderThickness="1"
                     CornerRadius="6"
-                    Padding="10"
+                    Padding="8"
                     Margin="6">
                 <DockPanel LastChildFill="True">
                     <Border DockPanel.Dock="Left"
@@ -122,7 +129,7 @@
                                    Foreground="#FFBEBEBE"
                                    FontSize="12"
                                    TextWrapping="Wrap"
-                                   MaxWidth="520"
+                                   MaxWidth="280"
                                    Margin="0,2,0,0" />
                     </StackPanel>
                 </DockPanel>
@@ -152,74 +159,391 @@
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource IconTemplate}" />
             </Button>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type wvm:WorkspaceShapeViewModel}">
+            <Grid Width="{Binding Width}"
+                  Height="{Binding Height}"
+                  Background="Transparent"
+                  MouseLeftButtonDown="WorkspaceShape_MouseLeftButtonDown"
+                  MouseMove="WorkspaceShape_MouseMove"
+                  MouseLeftButtonUp="WorkspaceShape_MouseLeftButtonUp">
+                <Rectangle x:Name="RectShape"
+                           RadiusX="2"
+                           RadiusY="2"
+                           Fill="#FF7A7A7A"
+                           Stroke="#FF2D2D2D"
+                           StrokeThickness="2" />
+                <Polygon x:Name="DiamondShape"
+                         Points="{Binding DiamondPoints}"
+                         Fill="#FF7A7A7A"
+                         Stroke="#FF2D2D2D"
+                         StrokeThickness="2"
+                          Visibility="Collapsed" />
+                <Ellipse x:Name="StartShape"
+                         Fill="#FF1DBA3A"
+                         Stroke="#FF0B4A16"
+                         StrokeThickness="2"
+                         Visibility="Collapsed" />
+            </Grid>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Kind}" Value="{x:Static wvm:WorkspaceShapeKind.Diamond}">
+                    <Setter TargetName="RectShape" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="DiamondShape" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="StartShape" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding Kind}" Value="{x:Static wvm:WorkspaceShapeKind.Start}">
+                    <Setter TargetName="RectShape" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="DiamondShape" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="StartShape" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="RectShape" Property="Stroke" Value="#FF4CFF4C" />
+                    <Setter TargetName="DiamondShape" Property="Stroke" Value="#FF4CFF4C" />
+                    <Setter TargetName="StartShape" Property="Stroke" Value="#FF4CFF4C" />
+                    <Setter TargetName="RectShape" Property="StrokeThickness" Value="3" />
+                    <Setter TargetName="DiamondShape" Property="StrokeThickness" Value="3" />
+                    <Setter TargetName="StartShape" Property="StrokeThickness" Value="3" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type wvm:WorkspaceImageViewModel}">
+            <Grid Width="{Binding Width}"
+                  Height="{Binding Height}"
+                  Background="Transparent"
+                  MouseLeftButtonDown="WorkspaceImage_MouseLeftButtonDown"
+                  MouseMove="WorkspaceImage_MouseMove"
+                  MouseLeftButtonUp="WorkspaceImage_MouseLeftButtonUp">
+                <Border x:Name="ImageBorder"
+                        Background="#FF6A6A6A"
+                        BorderBrush="#FF2D2D2D"
+                        BorderThickness="2"
+                        CornerRadius="4">
+                    <Grid>
+                        <Image x:Name="ImageContent"
+                               Source="{Binding Source}"
+                               Stretch="UniformToFill" />
+                        <TextBlock x:Name="ImagePlaceholder"
+                                   Text="IMG"
+                                   Foreground="#FF202020"
+                                   FontWeight="Bold"
+                                   FontSize="24"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Source}" Value="{x:Null}">
+                    <Setter TargetName="ImageContent" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="ImagePlaceholder" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="ImageBorder" Property="BorderBrush" Value="#FF4CFF4C" />
+                    <Setter TargetName="ImageBorder" Property="BorderThickness" Value="3" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type wvm:LineViewModel}">
+            <Grid>
+                <Canvas>
+                    <Line X1="{Binding P1.X}"
+                          Y1="{Binding P1.Y}"
+                          X2="{Binding P2.X}"
+                          Y2="{Binding P2.Y}"
+                          StrokeThickness="3"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          MouseLeftButtonDown="WorkspaceLine_MouseLeftButtonDown"
+                          MouseMove="WorkspaceLine_MouseMove"
+                          MouseLeftButtonUp="WorkspaceLine_MouseLeftButtonUp">
+                        <Line.Style>
+                            <Style TargetType="Line">
+                                <Setter Property="Stroke" Value="#FFEAEAEA" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="Stroke" Value="#FFFFE16A" />
+                                        <Setter Property="StrokeThickness" Value="4" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Line.Style>
+                    </Line>
+
+                    <Ellipse Width="10"
+                             Height="10"
+                             Fill="#FFCC0000"
+                             Stroke="#FF120000"
+                             StrokeThickness="1"
+                             Tag="P1"
+                             Canvas.Left="{Binding P1.X}"
+                             Canvas.Top="{Binding P1.Y}"
+                             MouseLeftButtonDown="Endpoint_MouseLeftButtonDown"
+                             MouseMove="Endpoint_MouseMove"
+                             MouseLeftButtonUp="Endpoint_MouseLeftButtonUp">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform X="-5" Y="-5" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <Ellipse Width="10"
+                             Height="10"
+                             Fill="#FFCC0000"
+                             Stroke="#FF120000"
+                             StrokeThickness="1"
+                             Tag="P2"
+                             Canvas.Left="{Binding P2.X}"
+                             Canvas.Top="{Binding P2.Y}"
+                             MouseLeftButtonDown="Endpoint_MouseLeftButtonDown"
+                             MouseMove="Endpoint_MouseMove"
+                             MouseLeftButtonUp="Endpoint_MouseLeftButtonUp">
+                        <Ellipse.RenderTransform>
+                            <TranslateTransform X="-5" Y="-5" />
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                </Canvas>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type wvm:WorkspaceBallViewModel}">
+            <Ellipse Width="4"
+                     Height="4"
+                     Fill="#FFFFE16A"
+                     Stroke="#FF202020"
+                     StrokeThickness="1">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform X="-2" Y="-2" />
+                </Ellipse.RenderTransform>
+            </Ellipse>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Margin="12">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="420" />
-        </Grid.ColumnDefinitions>
+        <Button x:Name="StartButton"
+                Content="START"
+                Width="140"
+                Height="40"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,8,0,0"
+                Background="#FF1DBA3A"
+                Foreground="#FFF0F0F0"
+                FontWeight="Bold"
+                BorderBrush="#FF0B4A16"
+                BorderThickness="2"
+                Panel.ZIndex="1000"
+                Click="StartButton_Click" />
 
-        <Border Grid.Column="0"
-                Background="#FF2A2A2A"
+        <Border Background="#FF2A2A2A"
                 BorderBrush="#FF4A4A4A"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="14"
-                Margin="0,0,12,0">
+                Padding="0">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Área de trabalho (arraste itens aqui)"
-                           Foreground="#FFEAEAEA"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,10" />
+                    <Canvas x:Name="WorkspaceCanvas"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Background="#FF1F1F1F"
+                            Focusable="True"
+                            ClipToBounds="True"
+                            AllowDrop="True"
+                            DragEnter="Workspace_DragEnter"
+                            DragOver="Workspace_DragOver"
+                            Drop="Workspace_Drop"
+                            PreviewMouseWheel="WorkspaceCanvas_PreviewMouseWheel"
+                            MouseLeftButtonDown="WorkspaceCanvas_MouseLeftButtonDown"
+                            MouseMove="WorkspaceCanvas_MouseMove"
+                            MouseLeftButtonUp="WorkspaceCanvas_MouseLeftButtonUp">
+                        <Canvas x:Name="WorldCanvas"
+                                Width="{Binding ActualWidth, ElementName=WorkspaceCanvas}"
+                                Height="{Binding ActualHeight, ElementName=WorkspaceCanvas}">
+                            <Canvas.RenderTransform>
+                                <MatrixTransform x:Name="WorldTransform" />
+                            </Canvas.RenderTransform>
 
-                <Border Grid.Row="1"
-                        x:Name="WorkspaceDropTarget"
-                        AllowDrop="True"
-                        Background="#FF1F1F1F"
-                        BorderBrush="#FF5A5A5A"
+                            <ItemsControl ItemsSource="{Binding Workspace.Shapes}"
+                                          Canvas.ZIndex="0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Workspace.Images}"
+                                          Canvas.ZIndex="1">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Workspace.Lines}"
+                                          Canvas.ZIndex="10"
+                                          Width="{Binding ActualWidth, ElementName=WorkspaceCanvas}"
+                                          Height="{Binding ActualHeight, ElementName=WorkspaceCanvas}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="0" />
+                                        <Setter Property="Canvas.Top" Value="0" />
+                                        <Setter Property="Width"
+                                                Value="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                        <Setter Property="Height"
+                                                Value="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Workspace.Balls}"
+                                          Canvas.ZIndex="15">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+
+                            <Line X1="{Binding Workspace.DraftLine.X1}"
+                                  Y1="{Binding Workspace.DraftLine.Y1}"
+                                  X2="{Binding Workspace.DraftLine.X2}"
+                                  Y2="{Binding Workspace.DraftLine.Y2}"
+                                  Stroke="#FF80D0FF"
+                                  StrokeThickness="2"
+                                  StrokeDashArray="3,2"
+                                  Canvas.ZIndex="20"
+                                  Visibility="{Binding Workspace.DraftLine.IsActive, Converter={StaticResource BoolToVisibility}}" />
+
+                            <Rectangle x:Name="SelectionRectangle"
+                                       Canvas.ZIndex="25"
+                                       Stroke="#FF4CA6FF"
+                                       StrokeThickness="1"
+                                       Fill="#334CA6FF"
+                                       Visibility="Collapsed" />
+
+                            <Ellipse Width="14"
+                                     Height="14"
+                                     Fill="#00000000"
+                                     Stroke="#FF4CFF4C"
+                                     StrokeThickness="2"
+                                     Canvas.ZIndex="30"
+                                     Canvas.Left="{Binding Workspace.SnapPreview.X}"
+                                     Canvas.Top="{Binding Workspace.SnapPreview.Y}"
+                                     Visibility="{Binding Workspace.SnapPreview.IsVisible, Converter={StaticResource BoolToVisibility}}">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform X="-7" Y="-7" />
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Canvas>
+                    </Canvas>
+
+                    <ScrollBar x:Name="WorkspaceHScrollBar"
+                               Grid.Row="1"
+                               Grid.Column="0"
+                               Orientation="Horizontal"
+                               Height="14"
+                               Margin="0"
+                               Visibility="Collapsed"
+                               ValueChanged="WorkspaceHScrollBar_ValueChanged" />
+
+                    <ScrollBar x:Name="WorkspaceVScrollBar"
+                               Grid.Row="0"
+                               Grid.Column="1"
+                               Orientation="Vertical"
+                               Width="14"
+                               Margin="0"
+                               Visibility="Collapsed"
+                               ValueChanged="WorkspaceVScrollBar_ValueChanged" />
+
+                    <Rectangle Grid.Row="1" Grid.Column="1" Width="14" Height="14" Fill="Transparent" />
+                </Grid>
+
+                <Border Background="#CC1B1B1B"
+                        BorderBrush="#FF4A4A4A"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="10"
-                        DragEnter="WorkspaceDropTarget_DragEnter"
-                        DragOver="WorkspaceDropTarget_DragOver"
-                        Drop="WorkspaceDropTarget_Drop">
+                        Margin="12"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Width="360">
                     <Grid>
-                        <TextBlock Text="Arraste um item do inventário e solte aqui."
-                                   Foreground="#FF9E9E9E"
-                                   FontSize="14"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding IsWorkspaceEmpty, Converter={StaticResource BoolToVisibility}}" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Área de trabalho"
+                                       Foreground="#FFEAEAEA"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="  (E abre/fecha inventário | SHIFT cria linha | ALT descola ponto)"
+                                       Foreground="#FFBEBEBE"
+                                       FontSize="12"
+                                       Margin="6,2,0,0" />
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Margin="0,8,0,0">
                             <ItemsControl ItemsSource="{Binding WorkspaceItems}"
-                                          ItemTemplate="{StaticResource WorkspaceItemTemplate}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                                          ItemTemplate="{StaticResource WorkspaceItemTemplate}" />
                         </ScrollViewer>
                     </Grid>
                 </Border>
             </Grid>
         </Border>
 
-        <Border Grid.Column="1"
-                Background="#FFB7B7B7"
+        <Border Background="#FFB7B7B7"
                 BorderBrush="#FF4A4A4A"
                 BorderThickness="2"
                 CornerRadius="8"
-                Padding="12">
+                Padding="12"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Visibility="{Binding IsInventoryOpen, Converter={StaticResource BoolToVisibility}}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -265,6 +589,43 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
             </Grid>
+        </Border>
+
+        <Border Background="#FFB7B7B7"
+                BorderBrush="#FF4A4A4A"
+                BorderThickness="2"
+                CornerRadius="10"
+                Padding="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,12">
+            <ItemsControl ItemsSource="{Binding BackpackSlots}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="7" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:SlotViewModel}">
+                        <Border Style="{StaticResource BackpackSlotBorderStyle}"
+                                AllowDrop="True"
+                                DragEnter="BackpackSlot_DragEnter"
+                                DragOver="BackpackSlot_DragOver"
+                                Drop="BackpackSlot_Drop"
+                                ToolTipService.IsEnabled="{Binding HasItem}">
+                            <Border.ToolTip>
+                                <StackPanel MaxWidth="260">
+                                    <TextBlock Text="{Binding Item.DisplayName}" FontWeight="Bold" />
+                                    <TextBlock Text="{Binding Item.Description}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border.ToolTip>
+                            <ContentPresenter Content="{Binding Item}" ContentTemplate="{StaticResource IconTemplate}" />
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Border>
     </Grid>
 </Window>

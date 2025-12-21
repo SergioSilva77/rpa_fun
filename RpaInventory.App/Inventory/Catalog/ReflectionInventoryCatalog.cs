@@ -60,8 +60,8 @@ public sealed class ReflectionInventoryCatalog : IInventoryCatalog
             new(InventorySectionId.Browser, "Navegador", icon: null, iconText: "WEB"),
             new(InventorySectionId.Programs, "Programas", icon: null, iconText: "APP"),
             new(InventorySectionId.Scripts, "Scripts", icon: null, iconText: "SCR"),
+            new(InventorySectionId.Shapes, "Formas", icon: null, iconText: "SHP"),
             new(InventorySectionId.Rpa, "RPA", icon: null, iconText: "RPA"),
-            new(InventorySectionId.Misc, "Outros", icon: null, iconText: "..."),
         };
 
     private static IReadOnlyList<InventorySection> CreateBottomSections()
@@ -73,3 +73,4 @@ public sealed class ReflectionInventoryCatalog : IInventoryCatalog
             new(InventorySectionId.Bottom4, "Seção 4", icon: null, iconText: "4"),
         };
 }
+
