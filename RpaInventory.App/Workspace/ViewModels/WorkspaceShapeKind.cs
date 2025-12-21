@@ -5,5 +5,6 @@ public enum WorkspaceShapeKind
     Square,
     Rectangle,
     Diamond,
+    LogicDecision,
     Start,
 }

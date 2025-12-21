@@ -9,6 +9,7 @@ public enum InventorySectionId
     Scripts,
     Rpa,
     Shapes,
+    Logic,
     Misc,
     Bottom1,
     Bottom2,

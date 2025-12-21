@@ -7,7 +7,7 @@ namespace RpaInventory.App.Workspace.Simulation;
 
 public sealed class LineFlowSimulator
 {
-    private const double SpeedWorldUnitsPerSecond = 120;
+    private const double SpeedWorldUnitsPerSecond = 80;
     private const int MaxBalls = 2000;
     private const double LineAnchorQuantizeStep = 0.0001;
     private const double ShapeAnchorQuantizeStep = 1;
@@ -146,7 +146,10 @@ public sealed class LineFlowSimulator
             if (ball.Progress < 1)
                 return false;
 
-            var nextEdges = _graph.GetOutgoingEdges(edge.To);
+            var nextEdges = _graph
+                .GetOutgoingEdges(edge.To)
+                .Where(e => !Equals(e.To, edge.From))
+                .ToList();
             if (nextEdges.Count == 0)
                 return true;
 
@@ -251,14 +254,8 @@ public sealed class LineFlowSimulator
                     if (Equals(a.Key, b.Key))
                         continue;
 
-                    var edge = new Edge(a.Key, b.Key, line, a.T, b.T);
-                    if (!outgoing.TryGetValue(edge.From, out var list))
-                    {
-                        list = new List<Edge>();
-                        outgoing[edge.From] = list;
-                    }
-
-                    list.Add(edge);
+                    AddEdge(new Edge(a.Key, b.Key, line, a.T, b.T));
+                    AddEdge(new Edge(b.Key, a.Key, line, b.T, a.T));
                 }
             }
 
@@ -273,6 +270,17 @@ public sealed class LineFlowSimulator
                 }
 
                 list.Add(new LineNode(Math.Clamp(t, 0, 1), key));
+            }
+
+            void AddEdge(Edge edge)
+            {
+                if (!outgoing.TryGetValue(edge.From, out var list))
+                {
+                    list = new List<Edge>();
+                    outgoing[edge.From] = list;
+                }
+
+                list.Add(edge);
             }
 
             void CollectExternalAnchors(IMovableWorkspacePoint point)
@@ -351,4 +359,3 @@ public sealed class LineFlowSimulator
         return Math.Round(value / step) * step;
     }
 }
-

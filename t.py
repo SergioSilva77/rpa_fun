@@ -2,105 +2,150 @@ import fitz
 import os
 import sys
 
-# --- CONFIGURAÇÕES ---
+# =========================
+# CONFIG
+# =========================
 
-# Esta é a variável que seu outro programa deve preencher/substituir
-# Exemplo: r'C:\Projeto\01 - A Extrair\Pasta_Cliente_X'
-caminho_pasta_alvo = r'${caminho_da_pasta}'
+caminho_pasta_alvo = st['folder_envelope'][0]
+id1 = '1'
 
-# Configuração de performance
-COMPRIMIR_AO_MAXIMO = False 
+COMPRIMIR_AO_MAXIMO = False
 
-# --- INÍCIO DO PROCESSO ---
+# Carta entra no merged? (você disse que pode unificar, mas precisa manter o arquivo carta separado).
+# Se quiser que a carta entre no merged, coloque True.
+INCLUIR_CARTA_NO_MERGED = False
 
-if not os.path.exists(caminho_pasta_alvo) or not os.path.isdir(caminho_pasta_alvo):
-    print(f"Erro: O caminho informado não existe ou não é uma pasta: {caminho_pasta_alvo}")
-    sys.exit(1) # Retorna erro para o programa chamador
+# Evita "prints parciais" (end=" ") que podem atrapalhar integração.
+# Se quiser silêncio total, coloque LOG = False.
+LOG = True
+LOG_EM_STDERR = True
 
-# Pega o nome da pasta para usar no nome do arquivo final (ex: "Pasta_Cliente_X")
-nome_pasta = os.path.basename(os.path.normpath(caminho_pasta_alvo))
 
-print(f"Processando pasta: {nome_pasta}...", end=" ", flush=True)
+def log(msg: str) -> None:
+    if not LOG:
+        return
+    print(msg, file=(sys.stderr if LOG_EM_STDERR else sys.stdout), flush=True)
 
-try:
-    # 1. Varredura única dos arquivos
-    arquivos_na_pasta = os.listdir(caminho_pasta_alvo)
-    
-    tem_merged = False
-    tem_carta = False
-    pdfs_candidatos = []
 
-    for f in arquivos_na_pasta:
-        f_upper = f.upper()
-        path_completo = os.path.join(caminho_pasta_alvo, f)
-        
-        # Ignora subpastas, foca só em arquivos
-        if not os.path.isfile(path_completo):
+def main() -> None:
+    if not os.path.isdir(caminho_pasta_alvo):
+        raise RuntimeError(f"O caminho informado não existe ou não é uma pasta: {caminho_pasta_alvo}")
+
+    nome_pasta = os.path.basename(os.path.normpath(caminho_pasta_alvo))
+    log(f"Processando pasta: {nome_pasta}")
+
+    arquivos = os.listdir(caminho_pasta_alvo)
+
+    # 1) Varredura única
+    merged_encontrado = None
+    cartas = []
+    candidatos = []
+
+    for f in arquivos:
+        path = os.path.join(caminho_pasta_alvo, f)
+        if not os.path.isfile(path):
             continue
 
-        # Checagem de Merged
-        if f_upper.startswith('MERGED'):
-            tem_merged = True
-        
-        # Checagem de Carta
-        if 'CARTA' in f_upper:
-            tem_carta = True
-            # Carta não entra na lista de união
-        
-        # Se for PDF e não for Merged nem Carta, é candidato
-        elif f_upper.endswith('.PDF'):
-            pdfs_candidatos.append(f)
+        up = f.upper()
 
-    # --- 2. REGRAS DE NEGÓCIO ---
+        if not up.endswith(".PDF"):
+            continue
 
-    # Se já tem merged, aborta imediatamente (independente de ter carta ou não)
-    if tem_merged:
-        print("-> ABORTADO: Já existe arquivo Merged nesta pasta.")
-        sys.exit(0) # Sai do script com sucesso (sem erro, apenas pulou)
+        # Se já existe merged, é skip (e não entra como candidato)
+        if up.startswith("MERGED"):
+            merged_encontrado = f
+            continue
 
-    # Validações de quantidade
-    if not pdfs_candidatos:
-        print("-> ABORTADO: Sem PDFs elegíveis para unir.")
-        sys.exit(0)
+        # Carta é separada e nunca entra como candidato (para manter fora do merged)
+        if "CARTA" in up:
+            cartas.append(f)
+            continue
 
-    if len(pdfs_candidatos) == 1:
-        print("-> ABORTADO: Apenas 1 arquivo disponível (não há o que unir).")
-        sys.exit(0)
+        candidatos.append(f)
 
-    # --- 3. EXECUÇÃO DO MERGE ---
-    pdfs_candidatos.sort()
-    caminhos_completos = [os.path.join(caminho_pasta_alvo, f) for f in pdfs_candidatos]
-    arquivo_saida = os.path.join(caminho_pasta_alvo, f"merged_{nome_pasta}.pdf")
-    
+    # 2) Regras de negócio
+    if merged_encontrado:
+        log(f"-> SKIP: Já existe merged na pasta: {merged_encontrado}")
+        return  # termina normalmente (sem sys.exit)
+
+    if not candidatos:
+        log("-> SKIP: Sem PDFs elegíveis para unir.")
+        return
+
+    # Se você NÃO inclui carta no merged, precisa de 2+ candidatos para valer a pena
+    if len(candidatos) < 2 and not (INCLUIR_CARTA_NO_MERGED and cartas):
+        log("-> SKIP: Apenas 1 PDF elegível (não há o que unir).")
+        return
+
+    # 3) Merge
+    candidatos.sort()
+    cartas.sort()
+
+    caminhos_candidatos = [os.path.join(caminho_pasta_alvo, f) for f in candidatos]
+    caminhos_cartas = [os.path.join(caminho_pasta_alvo, f) for f in cartas]
+
+    saida_final = os.path.join(caminho_pasta_alvo, f"merged_{nome_pasta}.pdf")
+    saida_tmp = saida_final + ".tmp"
+
+    # remove tmp antigo
+    try:
+        if os.path.exists(saida_tmp):
+            os.remove(saida_tmp)
+    except Exception:
+        pass
+
     pdf_final = fitz.open()
-    
-    for pdf_path in caminhos_completos:
-        try:
-            with fitz.open(pdf_path) as pdf:
-                pdf_final.insert_pdf(pdf)
-        except Exception as e:
-            print(f"[Erro ao ler {os.path.basename(pdf_path)}]", end=" ")
-    
-    # Salva o arquivo
-    if COMPRIMIR_AO_MAXIMO:
-        pdf_final.save(arquivo_saida, garbage=4, deflate=True)
-    else:
-        pdf_final.save(arquivo_saida, garbage=3)
-    
-    pdf_final.close()
-    
-    # --- 4. LIMPEZA ---
-    arquivos_removidos = 0
-    for pdf_path in caminhos_completos:
-        try:
-            os.remove(pdf_path)
-            arquivos_removidos += 1
-        except Exception as e:
-            print(f"[Falha ao deletar: {os.path.basename(pdf_path)}]", end=" ")
+    inseridos = []  # só deletar o que realmente entrou no merged
 
-    msg_carta = " (Carta mantida separada)" if tem_carta else ""
-    print(f"✓ SUCESSO: {arquivos_removidos} arquivos unidos em 'merged_{nome_pasta}.pdf'{msg_carta}")
+    try:
+        # opcional: inserir carta no merged, mas SEM deletar a carta
+        if INCLUIR_CARTA_NO_MERGED:
+            for p in caminhos_cartas:
+                try:
+                    with fitz.open(p) as doc:
+                        pdf_final.insert_pdf(doc)
+                except Exception as e:
+                    log(f"[Aviso] Falha ao ler carta '{os.path.basename(p)}': {e}")
 
+        for p in caminhos_candidatos:
+            try:
+                with fitz.open(p) as doc:
+                    pdf_final.insert_pdf(doc)
+                inseridos.append(p)
+            except Exception as e:
+                log(f"[Aviso] Falha ao ler '{os.path.basename(p)}': {e}")
+
+        if pdf_final.page_count == 0:
+            log("-> SKIP: Nenhum PDF pôde ser lido para merge.")
+            return
+
+        if COMPRIMIR_AO_MAXIMO:
+            pdf_final.save(saida_tmp, garbage=4, deflate=True)
+        else:
+            pdf_final.save(saida_tmp, garbage=3)
+
+    finally:
+        pdf_final.close()
+
+    os.replace(saida_tmp, saida_final)
+
+    # 4) Limpeza (nunca deletar carta)
+    removidos = 0
+    for p in inseridos:
+        try:
+            os.remove(p)
+            removidos += 1
+        except Exception as e:
+            log(f"[Aviso] Falha ao deletar '{os.path.basename(p)}': {e}")
+
+    msg_carta = " (Carta mantida separada)" if cartas else ""
+    log(f"✓ SUCESSO: {removidos} arquivos unidos em '{os.path.basename(saida_final)}'{msg_carta}")
+
+
+# Execução sem sys.exit em fluxo normal
+try:
+    main()
 except Exception as e:
-    print(f"\nERRO CRÍTICO: {e}")
-    sys.exit(1) # Retorna erro para o programa chamador
+    # Aqui sim é “erro de verdade” (Process Studio deve marcar como falha)
+    log(f"ERRO CRÍTICO: {e}")
+    raise

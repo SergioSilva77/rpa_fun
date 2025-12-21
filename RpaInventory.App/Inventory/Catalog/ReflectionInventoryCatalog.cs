@@ -61,6 +61,7 @@ public sealed class ReflectionInventoryCatalog : IInventoryCatalog
             new(InventorySectionId.Programs, "Programas", icon: null, iconText: "APP"),
             new(InventorySectionId.Scripts, "Scripts", icon: null, iconText: "SCR"),
             new(InventorySectionId.Shapes, "Formas", icon: null, iconText: "SHP"),
+            new(InventorySectionId.Logic, "Lógica", icon: null, iconText: "LOG"),
             new(InventorySectionId.Rpa, "RPA", icon: null, iconText: "RPA"),
         };
 
@@ -73,4 +74,3 @@ public sealed class ReflectionInventoryCatalog : IInventoryCatalog
             new(InventorySectionId.Bottom4, "Seção 4", icon: null, iconText: "4"),
         };
 }
-

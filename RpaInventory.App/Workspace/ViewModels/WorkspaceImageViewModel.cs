@@ -6,6 +6,7 @@ namespace RpaInventory.App.Workspace.ViewModels;
 
 public sealed class WorkspaceImageViewModel : ViewModelBase, IMovableWorkspaceSurface
 {
+    private const double MinSize = 50;
     private bool _isSelected;
     private double _x;
     private double _y;
@@ -17,8 +18,8 @@ public sealed class WorkspaceImageViewModel : ViewModelBase, IMovableWorkspaceSu
     {
         _x = x;
         _y = y;
-        _width = width;
-        _height = height;
+        _width = Math.Max(MinSize, width);
+        _height = Math.Max(MinSize, height);
         _source = source;
         DisplayName = displayName;
     }
@@ -85,4 +86,3 @@ public sealed class WorkspaceImageViewModel : ViewModelBase, IMovableWorkspaceSu
         Y += dy;
     }
 }
-

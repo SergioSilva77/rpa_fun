@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -21,10 +22,15 @@ public partial class MainWindow : Window, IExecutionContext
 
     private Point _slotDragStart;
     private SlotViewModel? _slotDragSource;
+    private SlotViewModel? _hoveredSlot;
+    private string? _hoveredSlotTag;
 
     private bool _isDraftingLine;
     private Point _draftStartWorld;
+    private SnapCandidate? _draftStartSnapCandidate;
     private SnapCandidate? _draftEndSnapCandidate;
+    private WorkspaceShapeViewModel? _draftLogicDecisionSource;
+    private LogicBranchKind _draftLogicDecisionBranch = LogicBranchKind.None;
 
     private bool _isSelecting;
     private Point _selectionStartWorld;
@@ -90,6 +96,45 @@ public partial class MainWindow : Window, IExecutionContext
             e.Handled = true;
             return;
         }
+
+        if (e.Key == Key.Delete && !e.IsRepeat)
+        {
+            DeleteSelectedWorkspaceItems();
+            e.Handled = true;
+            return;
+        }
+
+        if (TryHandleHotbarAssign(e))
+            return;
+    }
+
+    private bool TryHandleHotbarAssign(KeyEventArgs e)
+    {
+        var viewModel = ViewModel;
+        if (viewModel is null || !viewModel.IsInventoryOpen)
+            return false;
+
+        var slotIndex = e.Key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            Key.D6 or Key.NumPad6 => 5,
+            Key.D7 or Key.NumPad7 => 6,
+            _ => -1,
+        };
+
+        if (slotIndex < 0)
+            return false;
+
+        if (_hoveredSlotTag != "InventorySlot" || _hoveredSlot?.Item is null)
+            return false;
+
+        viewModel.BackpackSlots[slotIndex].Item = _hoveredSlot.Item;
+        e.Handled = true;
+        return true;
     }
 
     private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
@@ -155,6 +200,33 @@ public partial class MainWindow : Window, IExecutionContext
         DragDrop.DoDragDrop((DependencyObject)sender as UIElement ?? this, data, DragDropEffects.Copy);
 
         _slotDragSource = null;
+    }
+
+    private void Slot_MouseEnter(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement element)
+            return;
+
+        if (element.DataContext is not SlotViewModel slot)
+            return;
+
+        _hoveredSlot = slot;
+        _hoveredSlotTag = element.Tag as string;
+    }
+
+    private void Slot_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement element)
+            return;
+
+        if (element.DataContext is not SlotViewModel slot)
+            return;
+
+        if (!ReferenceEquals(_hoveredSlot, slot))
+            return;
+
+        _hoveredSlot = null;
+        _hoveredSlotTag = null;
     }
 
     private static bool IsBeyondDragThreshold(Point start, Point current)
@@ -493,7 +565,16 @@ public partial class MainWindow : Window, IExecutionContext
         {
             UpdateSelectionRect(_lastWorkspaceMouseWorld);
             e.Handled = true;
+            return;
         }
+
+        if (e.LeftButton != MouseButtonState.Released || _isDraggingSelection || _isDraggingEndpoint)
+            return;
+
+        if (IsShiftDown())
+            ShowSnapPreview(FindBestSnapCandidate(_lastWorkspaceMouseWorld, excludeLine: null, excludePoint: null));
+        else
+            ShowSnapPreview(null);
     }
 
     private void WorkspaceCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -520,15 +601,18 @@ public partial class MainWindow : Window, IExecutionContext
             return;
 
         _isDraftingLine = true;
-        _draftStartWorld = startWorld;
+
+        _draftStartSnapCandidate = FindBestSnapCandidate(startWorld, excludeLine: null, excludePoint: null);
+        _draftStartWorld = _draftStartSnapCandidate?.WorldPoint ?? startWorld;
         _draftEndSnapCandidate = null;
 
         Workspace.DraftLine.IsActive = true;
-        Workspace.DraftLine.X1 = startWorld.X;
-        Workspace.DraftLine.Y1 = startWorld.Y;
-        Workspace.DraftLine.X2 = startWorld.X;
-        Workspace.DraftLine.Y2 = startWorld.Y;
+        Workspace.DraftLine.X1 = _draftStartWorld.X;
+        Workspace.DraftLine.Y1 = _draftStartWorld.Y;
+        Workspace.DraftLine.X2 = _draftStartWorld.X;
+        Workspace.DraftLine.Y2 = _draftStartWorld.Y;
 
+        ConfigureDraftLogicBranch();
         Workspace.SnapPreview.Hide();
     }
 
@@ -555,16 +639,203 @@ public partial class MainWindow : Window, IExecutionContext
         _isDraftingLine = false;
         Workspace.DraftLine.IsActive = false;
 
-        var startCandidate = FindBestSnapCandidate(_draftStartWorld, excludeLine: null, excludePoint: null);
-        var p1 = startCandidate?.CreatePoint() ?? new FreeWorkspacePoint(_draftStartWorld.X, _draftStartWorld.Y);
+        var p1 = _draftStartSnapCandidate?.CreatePoint() ?? new FreeWorkspacePoint(_draftStartWorld.X, _draftStartWorld.Y);
         var p2 = _draftEndSnapCandidate?.CreatePoint() ?? new FreeWorkspacePoint(endWorld.X, endWorld.Y);
 
-        Workspace.Lines.Add(new LineViewModel(p1, p2));
+        var line = new LineViewModel(p1, p2);
+        Workspace.Lines.Add(line);
+        FinalizeDraftLogicBranch(line);
 
+        Workspace.DraftLine.BranchKind = LogicBranchKind.None;
+        _draftLogicDecisionSource = null;
+        _draftLogicDecisionBranch = LogicBranchKind.None;
+        _draftStartSnapCandidate = null;
         _draftEndSnapCandidate = null;
         Workspace.SnapPreview.Hide();
 
         UpdateScrollbars();
+    }
+
+    private void ConfigureDraftLogicBranch()
+    {
+        if (Workspace is null)
+            return;
+
+        _draftLogicDecisionSource = TryGetLogicDecisionSource(_draftStartSnapCandidate);
+        _draftLogicDecisionBranch = _draftLogicDecisionSource is null ? LogicBranchKind.None : GetNextDecisionBranch(_draftLogicDecisionSource);
+        Workspace.DraftLine.BranchKind = _draftLogicDecisionBranch;
+    }
+
+    private void FinalizeDraftLogicBranch(LineViewModel line)
+    {
+        if (Workspace is null || _draftLogicDecisionSource is null)
+            return;
+
+        if (!IsLineConnectedToSurface(line, _draftLogicDecisionSource))
+            return;
+
+        if (_draftLogicDecisionBranch is LogicBranchKind.True or LogicBranchKind.False)
+        {
+            AssignDecisionBranch(_draftLogicDecisionSource, line, _draftLogicDecisionBranch);
+            return;
+        }
+
+        ShowDecisionBranchPicker(_draftLogicDecisionSource, line);
+    }
+
+    private LogicBranchKind GetNextDecisionBranch(WorkspaceShapeViewModel decision)
+    {
+        if (Workspace is null)
+            return LogicBranchKind.None;
+
+        var hasTrue = Workspace.Lines.Any(l => l.BranchKind == LogicBranchKind.True && IsLineConnectedToSurface(l, decision));
+        var hasFalse = Workspace.Lines.Any(l => l.BranchKind == LogicBranchKind.False && IsLineConnectedToSurface(l, decision));
+
+        if (!hasTrue)
+            return LogicBranchKind.True;
+
+        if (!hasFalse)
+            return LogicBranchKind.False;
+
+        return LogicBranchKind.None;
+    }
+
+    private void AssignDecisionBranch(WorkspaceShapeViewModel decision, LineViewModel line, LogicBranchKind branch)
+    {
+        if (Workspace is null)
+            return;
+
+        var toRemove = Workspace.Lines
+            .Where(existing => !ReferenceEquals(existing, line))
+            .Where(existing => existing.BranchKind == branch && IsLineConnectedToSurface(existing, decision))
+            .ToList();
+
+        foreach (var existing in toRemove)
+            RemoveLine(existing);
+
+        line.BranchKind = branch;
+    }
+
+    private void ShowDecisionBranchPicker(WorkspaceShapeViewModel decision, LineViewModel line)
+    {
+        var menu = new ContextMenu
+        {
+            PlacementTarget = WorkspaceCanvas,
+            Placement = PlacementMode.MousePoint,
+            VerticalOffset = 14,
+        };
+
+        var trueItem = new MenuItem { Header = "Condição Verdadeira" };
+        trueItem.Click += (_, _) => AssignDecisionBranch(decision, line, LogicBranchKind.True);
+
+        var falseItem = new MenuItem { Header = "Condição Falsa" };
+        falseItem.Click += (_, _) => AssignDecisionBranch(decision, line, LogicBranchKind.False);
+
+        menu.Items.Add(trueItem);
+        menu.Items.Add(falseItem);
+        menu.IsOpen = true;
+    }
+
+    private static WorkspaceShapeViewModel? TryGetLogicDecisionSource(SnapCandidate? candidate)
+        => candidate switch
+        {
+            PointOnShapeCandidate { Shape: WorkspaceShapeViewModel { Kind: WorkspaceShapeKind.LogicDecision } shape } => shape,
+            ExistingPointCandidate { Point: PointOnShapeWorkspacePoint { Shape: WorkspaceShapeViewModel { Kind: WorkspaceShapeKind.LogicDecision } shape } } => shape,
+            _ => null,
+        };
+
+    private static bool IsLineConnectedToSurface(LineViewModel line, IWorkspaceSurface surface)
+        => line.P1 is PointOnShapeWorkspacePoint p1 && ReferenceEquals(p1.Shape, surface)
+           || line.P2 is PointOnShapeWorkspacePoint p2 && ReferenceEquals(p2.Shape, surface);
+
+    private void RemoveLine(LineViewModel line)
+    {
+        if (Workspace is null)
+            return;
+
+        Workspace.Lines.Remove(line);
+
+        foreach (var other in Workspace.Lines)
+        {
+            DetachPointIfOnLine(other, EndpointKind.P1, line);
+            DetachPointIfOnLine(other, EndpointKind.P2, line);
+        }
+    }
+
+    private static void DetachPointIfOnLine(LineViewModel line, EndpointKind endpointKind, LineViewModel removedLine)
+    {
+        var endpoint = GetEndpoint(line, endpointKind);
+        if (endpoint is not PointOnLineWorkspacePoint onLine || !ReferenceEquals(onLine.ParentLine, removedLine))
+            return;
+
+        SetEndpoint(line, endpointKind, new FreeWorkspacePoint(onLine.X, onLine.Y));
+    }
+
+    private void DeleteSelectedWorkspaceItems()
+    {
+        if (Workspace is null)
+            return;
+
+        var linesToRemove = Workspace.Lines.Where(l => l.IsSelected).ToList();
+        var shapesToRemove = Workspace.Shapes.Where(s => s.IsSelected).ToList();
+        var imagesToRemove = Workspace.Images.Where(i => i.IsSelected).ToList();
+
+        foreach (var line in linesToRemove)
+            RemoveLine(line);
+
+        if (shapesToRemove.Count == 0 && imagesToRemove.Count == 0)
+        {
+            UpdateScrollbars();
+            return;
+        }
+
+        var removedSurfaces = new HashSet<IWorkspaceSurface>();
+        foreach (var s in shapesToRemove)
+            removedSurfaces.Add(s);
+        foreach (var img in imagesToRemove)
+            removedSurfaces.Add(img);
+
+        DetachPointsOnRemovedSurfaces(removedSurfaces);
+
+        foreach (var s in shapesToRemove)
+            Workspace.Shapes.Remove(s);
+
+        foreach (var img in imagesToRemove)
+            Workspace.Images.Remove(img);
+
+        UpdateScrollbars();
+    }
+
+    private void DetachPointsOnRemovedSurfaces(IReadOnlySet<IWorkspaceSurface> removedSurfaces)
+    {
+        if (Workspace is null)
+            return;
+
+        if (removedSurfaces.Count == 0)
+            return;
+
+        var pointMap = new Dictionary<PointOnShapeWorkspacePoint, FreeWorkspacePoint>();
+
+        foreach (var line in Workspace.Lines)
+        {
+            ReplaceEndpointIfOnRemovedSurface(line, EndpointKind.P1);
+            ReplaceEndpointIfOnRemovedSurface(line, EndpointKind.P2);
+        }
+
+        void ReplaceEndpointIfOnRemovedSurface(LineViewModel line, EndpointKind endpointKind)
+        {
+            var endpoint = GetEndpoint(line, endpointKind);
+            if (endpoint is not PointOnShapeWorkspacePoint onShape || !removedSurfaces.Contains(onShape.Shape))
+                return;
+
+            if (!pointMap.TryGetValue(onShape, out var free))
+            {
+                free = new FreeWorkspacePoint(onShape.X, onShape.Y);
+                pointMap[onShape] = free;
+            }
+
+            SetEndpoint(line, endpointKind, free);
+        }
     }
 
     private void StartSelection(Point startWorld, bool additive)
@@ -712,6 +983,9 @@ public partial class MainWindow : Window, IExecutionContext
         if (Workspace is null)
             return;
 
+        var world = ViewportToWorld(e.GetPosition(WorkspaceCanvas));
+        _lastWorkspaceMouseWorld = world;
+
         if (sender is not DependencyObject dep)
             return;
 
@@ -722,6 +996,14 @@ public partial class MainWindow : Window, IExecutionContext
 
         if (element.DataContext is not WorkspaceShapeViewModel shape)
             return;
+
+        if (IsShiftDown())
+        {
+            StartDraftLine(world);
+            WorkspaceCanvas.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
 
         HandleSingleClickSelection(shape, additive: IsCtrlDown());
 
@@ -764,6 +1046,9 @@ public partial class MainWindow : Window, IExecutionContext
         if (Workspace is null)
             return;
 
+        var world = ViewportToWorld(e.GetPosition(WorkspaceCanvas));
+        _lastWorkspaceMouseWorld = world;
+
         if (sender is not DependencyObject dep)
             return;
 
@@ -774,6 +1059,14 @@ public partial class MainWindow : Window, IExecutionContext
 
         if (element.DataContext is not WorkspaceImageViewModel image)
             return;
+
+        if (IsShiftDown())
+        {
+            StartDraftLine(world);
+            WorkspaceCanvas.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
 
         HandleSingleClickSelection(image, additive: IsCtrlDown());
 
@@ -1260,26 +1553,44 @@ public partial class MainWindow : Window, IExecutionContext
 
     private static Point GetClosestPointOnRect(IWorkspaceSurface surface, Point point)
     {
-        var x = Math.Clamp(point.X, surface.X, surface.X + surface.Width);
-        var y = Math.Clamp(point.Y, surface.Y, surface.Y + surface.Height);
-        return new Point(x, y);
+        var left = surface.X;
+        var top = surface.Y;
+        var right = surface.X + surface.Width;
+        var bottom = surface.Y + surface.Height;
+
+        var clampedX = Math.Clamp(point.X, left, right);
+        var clampedY = Math.Clamp(point.Y, top, bottom);
+
+        var inside = point.X >= left && point.X <= right && point.Y >= top && point.Y <= bottom;
+        if (!inside)
+            return new Point(clampedX, clampedY);
+
+        var dLeft = point.X - left;
+        var dRight = right - point.X;
+        var dTop = point.Y - top;
+        var dBottom = bottom - point.Y;
+
+        var min = Math.Min(Math.Min(dLeft, dRight), Math.Min(dTop, dBottom));
+        if (min == dLeft)
+            return new Point(left, clampedY);
+        if (min == dRight)
+            return new Point(right, clampedY);
+        if (min == dTop)
+            return new Point(clampedX, top);
+
+        return new Point(clampedX, bottom);
     }
 
     private static Point GetClosestPointOnShape(WorkspaceShapeViewModel shape, Point point)
     {
-        if (shape.Kind != WorkspaceShapeKind.Diamond)
+        if (shape.Kind == WorkspaceShapeKind.Start)
+            return GetClosestPointOnStart(shape, point);
+
+        if (shape.Kind is not (WorkspaceShapeKind.Diamond or WorkspaceShapeKind.LogicDecision))
             return GetClosestPointOnRect(shape, point);
 
         var cx = shape.X + (shape.Width / 2);
         var cy = shape.Y + (shape.Height / 2);
-        var dx = Math.Abs(point.X - cx);
-        var dy = Math.Abs(point.Y - cy);
-
-        var rx = shape.Width / 2;
-        var ry = shape.Height / 2;
-
-        if (rx > 0 && ry > 0 && ((dx / rx) + (dy / ry)) <= 1)
-            return point;
 
         var top = new Point(cx, shape.Y);
         var right = new Point(shape.X + shape.Width, cy);
@@ -1295,6 +1606,20 @@ public partial class MainWindow : Window, IExecutionContext
 
         static ProjectionResult Min(ProjectionResult a, ProjectionResult b)
             => b.Distance < a.Distance ? b : a;
+    }
+
+    private static Point GetClosestPointOnStart(WorkspaceShapeViewModel start, Point point)
+    {
+        var cx = start.X + (start.Width / 2);
+        var cy = start.Y + (start.Height / 2);
+        var radius = Math.Max(1, Math.Min(start.Width, start.Height) / 2);
+
+        var v = new Vector(point.X - cx, point.Y - cy);
+        if (v.Length <= double.Epsilon)
+            return new Point(cx + radius, cy);
+
+        v.Normalize();
+        return new Point(cx + (v.X * radius), cy + (v.Y * radius));
     }
 
     private void ShowSnapPreview(SnapCandidate? candidate)
