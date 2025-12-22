@@ -1,0 +1,44 @@
+---
+description: "SOLID design rules (practical, WPF/MVVM-friendly, geometry/math oriented)."
+globs:
+  - "**/*.cs"
+  - "**/*.xaml"
+alwaysApply: true
+---
+
+# SOLID principles (practical enforcement)
+
+Use SOLID as a **design lens**, not as ceremony. Prefer clarity and testability.
+
+## SRP — Single Responsibility
+- Each class has **one reason to change**.
+- In WPF: keep **ViewModels** focused on UI state + orchestration; move calculations to domain/services.
+- In geometry: separate concerns such as:
+  - data types (Point/Vector/Shape)
+  - algorithms (intersection, distance, hit-testing)
+  - rendering adapters (WPF Shapes / Geometry / DrawingContext)
+
+## OCP — Open/Closed
+- Add new behavior by **extension**, not by editing big `switch` blocks.
+- Prefer strategy/polymorphism where it reduces `if/else` branching.
+- For shapes: avoid `switch(shape.Type)`; prefer `IShape` + visitors/strategies where appropriate.
+
+## LSP — Liskov Substitution
+- Derived types must honor base type contracts (no surprises).
+- If a subtype cannot uphold the contract, **do not inherit**—use composition.
+- In geometry: if a "shape" cannot provide a meaningful `GetBounds()`, it should not implement `IShape` that requires it.
+
+## ISP — Interface Segregation
+- Prefer **small, role-based interfaces**.
+- Example: split `IShape` into `IRenderable`, `IHitTestable`, `ITransformable`, `IMeasurable` when not all shapes support all capabilities.
+
+## DIP — Dependency Inversion
+- Depend on **abstractions**, not concretes.
+- ViewModels depend on `I*Service` interfaces; infrastructure/implementations are wired via DI.
+- Avoid hard dependencies on WPF types inside core geometry/domain (keep `System.Windows.*` at the edges).
+
+## Practical checks (when generating/modifying code)
+- If a class exceeds ~200 lines, ask whether SRP is being violated.
+- If you introduce `switch`/`if` chains for type handling, consider OCP alternatives.
+- If an interface forces empty/throwing implementations, split it (ISP).
+- If a ViewModel does heavy math, extract to domain/service (SRP + testability).

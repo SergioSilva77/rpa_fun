@@ -1,0 +1,41 @@
+---
+description: "Geometry and math rules for C# drawing/editing: tolerances, transforms, hit-testing, robust parsing."
+globs:
+  - **/*.cs
+alwaysApply: true
+---
+
+# Geometry / Math rules (C#)
+
+## Numeric correctness
+- Never compare doubles directly for geometric equality. Use an epsilon/tolerance:
+  - `AlmostEqual(a, b, eps)`
+  - `AlmostZero(x, eps)`
+- Choose tolerances explicitly (screen-space vs world-space). Document the tolerance source.
+
+## Coordinate systems
+- Treat transforms as first-class:
+  - WPF: `Transform`, `Matrix`, `MatrixTransform`
+  - Keep consistent “world” vs “screen” coordinates.
+- Do not scatter ad-hoc conversions; centralize in a `CoordinateTransformService` (or similar).
+
+## Primitives and operations
+- Prefer WPF primitives in UI/adapters: `Point`, `Vector`, `Rect`, `Size`, `Matrix`.
+- In Domain layer, prefer your own lightweight structs (or `System.Numerics.Vector2`) to avoid WPF dependency.
+- Encapsulate operations: distance, projection, segment intersection, bounding boxes.
+
+## Hit-testing and selection
+- Prefer deterministic algorithms:
+  - For WPF shapes: `Geometry.FillContains`, `Geometry.StrokeContains` (with a configurable pen thickness).
+  - For visuals: `VisualTreeHelper.HitTest` when appropriate.
+- Use “pick radius” in screen pixels (converted to world) for selecting handles/segments.
+
+## Input validation (avoid regex)
+- For numeric input: use `double.TryParse` (or `TryParseExact` for formats) with explicit `CultureInfo`.
+- For enums: `Enum.TryParse`.
+- For file formats: parse with a real parser (split/tokenize with clear rules), not regex-heavy “validation”.
+
+## Algorithm hygiene
+- For any non-trivial geometry algorithm:
+  - write unit tests (edge cases: colinear, near-parallel, tiny segments, huge coordinates)
+  - document assumptions (closed/open intervals, inclusive bounds, tolerance behavior)

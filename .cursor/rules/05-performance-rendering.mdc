@@ -1,0 +1,25 @@
+---
+description: "Rendering/performance rules for interactive drawing in WPF."
+globs:
+  - **/*.cs
+  - **/*.xaml
+  - **/*.xaml.cs
+alwaysApply: true
+---
+
+# Performance & Rendering (WPF)
+
+## General
+- Avoid allocations in per-frame or per-mouse-move loops.
+- Cache geometry where possible; recompute only what changed.
+
+## WPF-specific
+- Freeze `Freezable` objects (`Brush`, `Pen`, `Geometry`) when they will not change.
+- Prefer `StreamGeometry` for complex paths; freeze it after build.
+- Consider custom drawing (`OnRender` / `DrawingVisual`) for large numbers of primitives.
+- Reduce layout churn: use `Canvas` for absolute positioning; avoid deep visual trees for large scenes.
+
+## Interaction loops
+- Throttle expensive recomputations during drag; coalesce mouse-move events.
+- Use `CompositionTarget.Rendering` carefully; unsubscribe when not needed.
+- Use hit-test acceleration structures if you have many shapes (spatial index, bounding boxes).

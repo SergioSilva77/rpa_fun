@@ -1,0 +1,27 @@
+---
+description: "Testing and code quality rules: geometry edge cases, deterministic tests, no flaky UI tests by default."
+globs:
+  - **/*.cs
+  - **/*.csproj
+alwaysApply: true
+---
+
+# Testing & Quality
+
+## Unit tests
+- Test geometry algorithms in isolation (Domain/Application), without WPF UI dependencies.
+- Ensure tests are deterministic (fixed seeds for random tests).
+- Cover edge cases:
+  - parallel/near-parallel segments
+  - colinear overlap
+  - tiny distances relative to tolerance
+  - large coordinate magnitudes
+
+## Integration tests (optional)
+- Prefer testing services and use-cases over UI automation.
+- UI tests (if any) must be stable and minimal; avoid brittle coordinate-based automation unless necessary.
+
+## Quality gates
+- Keep methods small and cohesive.
+- Prefer explicit invariants and guard clauses.
+- Document “why”, not “what” (code should express the “what”).

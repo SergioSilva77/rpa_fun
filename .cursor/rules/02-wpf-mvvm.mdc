@@ -1,0 +1,34 @@
+---
+description: "WPF + MVVM rules: separation of concerns, bindings, commands, performance-safe UI patterns."
+globs:
+  - **/*.xaml
+  - **/*.xaml.cs
+  - **/*.cs
+alwaysApply: true
+---
+
+# WPF + MVVM rules
+
+## MVVM boundaries
+- **View (XAML):** layout, bindings, visuals, triggers, resources.
+- **ViewModel:** state, commands, orchestration; no direct `MessageBox`, no direct `Window` manipulation unless abstracted.
+- **Model/Domain:** geometry primitives + algorithms; no `DependencyObject`, no `Dispatcher`.
+
+## Commands
+- Prefer `ICommand` (or a well-known MVVM toolkit) for user actions.
+- Keep command handlers small; push heavy logic into services/use-cases.
+
+## Binding conventions
+- Use `INotifyPropertyChanged` correctly; avoid raising property changes excessively in drag loops (throttle if needed).
+- Prefer `ObservableCollection<T>` for collections bound to ItemsControl; avoid reassigning whole collections unless necessary.
+
+## UI thread safety
+- Any UI interaction must run on the Dispatcher thread.
+- Heavy calculations should run off-thread, but results must be marshaled back safely (and consider cancellation).
+
+## Rendering approach
+- For many shapes, avoid thousands of UIElements (Line/Path) if performance is a concern.
+- Prefer custom drawing:
+  - `OnRender(DrawingContext)`
+  - `DrawingVisual`
+  - `StreamGeometry` and frozen resources

@@ -1,0 +1,24 @@
+---
+description: "Clean Architecture guidance tailored for WPF: keep geometry core independent, UI as adapter."
+globs:
+  - **/*.cs
+  - **/*.csproj
+  - **/*.sln
+alwaysApply: true
+---
+
+# Clean Architecture for WPF
+
+## Goal
+Keep geometry/math logic testable and independent of UI frameworks, while letting WPF handle rendering and interaction.
+
+## Suggested layers (can be folders or separate projects)
+- **Domain (Core):** geometry primitives, algorithms (intersection, projection, snapping), invariants.
+- **Application:** use-cases like `MoveShape`, `ResizeShape`, `HitTest`, `SnapToGrid`; interfaces for persistence/IO.
+- **Infrastructure:** file formats, persistence, logging, external integrations.
+- **Presentation (WPF):** XAML, ViewModels, adapters to convert Domain primitives to WPF types (Point/Geometry/Transform).
+
+## Rules
+- Domain must not reference WPF namespaces (`System.Windows.*`, `System.Windows.Media.*`).
+- Presentation can reference Domain and Application, not the reverse.
+- Use DI at composition root (App startup) to wire services.

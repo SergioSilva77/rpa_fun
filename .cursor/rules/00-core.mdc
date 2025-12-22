@@ -1,0 +1,27 @@
+---
+description: "Core collaboration rules for this repository (precision, minimal diffs, no hallucinated APIs)."
+globs:
+  - **/*
+alwaysApply: true
+---
+
+# Core rules
+
+## Working style
+- Prefer **small, safe changes** over rewrites.
+- If you are not sure, ask **1–3 specific questions** (not a long questionnaire).
+- When you propose changes, include:
+  - what you changed
+  - why
+  - any trade-offs
+  - how to test (commands or steps)
+
+## Truthfulness / safety
+- Do not invent APIs, framework capabilities, filenames, or existing project structure.
+- If something must be verified (version, API behavior, build step), say so and propose a concrete verification.
+
+## Output format
+- For code changes, prefer:
+  - the exact file path(s)
+  - a patch-style diff, or full file content if requested
+- Keep responses technical and direct.

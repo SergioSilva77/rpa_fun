@@ -19,7 +19,7 @@ public sealed class MainViewModel : ViewModelBase
 
     private readonly IInventoryCatalog _catalog;
     private InventorySectionId _selectedSectionId;
-    private bool _isInventoryOpen = true;
+    private bool _isInventoryOpen = false;
 
     public MainViewModel(IInventoryCatalog catalog)
     {

@@ -1,0 +1,35 @@
+---
+description: ".NET 9 / C# rules (idiomatic code, async, disposables, culture, exceptions)."
+globs:
+  - **/*.cs
+  - **/*.csproj
+  - **/*.sln
+alwaysApply: true
+---
+
+# .NET / C# rules
+
+## Idiomatic C#
+- Follow .NET naming: PascalCase (types/methods/public), camelCase (locals/private fields).
+- Prefer `readonly` fields and immutable types when feasible.
+- Use `record` / `record struct` when you want value semantics.
+- Use `required` where it clarifies invariants (C# 11+).
+- Prefer pattern matching and switch expressions for clarity.
+
+## Async and threading
+- Use `async/await` for I/O and long-running operations; never block the UI thread (`.Result`, `.Wait()`).
+- Propagate `CancellationToken` for operations triggered by UI interactions.
+- Use `ConfigureAwait(false)` in library code (non-UI layer) when appropriate; avoid it in WPF UI code unless you know the continuation context.
+
+## Exceptions & validation
+- Do not use exceptions for control flow.
+- Validate input via guards at boundaries; throw `ArgumentException`/`ArgumentNullException` where appropriate.
+- Prefer `TryParse`-style APIs for user inputs.
+
+## Culture and parsing
+- For persisted formats and protocol text, use `CultureInfo.InvariantCulture`.
+- For UI input, be explicit about culture (don’t rely on current thread culture silently).
+
+## Resource management
+- Correctly implement `IDisposable` when holding unmanaged resources, streams, etc.
+- Avoid excessive allocations in hot paths (rendering, drag loops).

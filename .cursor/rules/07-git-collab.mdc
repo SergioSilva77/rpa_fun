@@ -1,0 +1,15 @@
+---
+description: "Git and collaboration rules: commits, PR hygiene, and review-friendly diffs."
+globs:
+  - **/*
+alwaysApply: true
+---
+
+# Git & Collaboration
+
+- Make changes reviewable: small commits, focused diffs.
+- Use clear commit messages (imperative mood), e.g.:
+  - `Fix hit-testing tolerance in polyline selection`
+  - `Refactor: extract CoordinateTransformService`
+- Avoid drive-by formatting changes.
+- When changing public APIs, update docs and call sites in the same change.

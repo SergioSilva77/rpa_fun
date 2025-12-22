@@ -128,6 +128,13 @@ public partial class MainWindow : Window, IExecutionContext
                 e.Handled = true;
                 return;
             }
+
+            if (ViewModel?.IsInventoryOpen == true)
+            {
+                ViewModel.ToggleInventory();
+                e.Handled = true;
+                return;
+            }
         }
 
         if (TryHandleBackpackSelection(e))
