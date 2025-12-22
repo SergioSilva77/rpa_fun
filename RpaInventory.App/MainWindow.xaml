@@ -372,12 +372,13 @@
                       Width="16"
                       Height="16"
                       Margin="0,0,6,0"
-                      Fill="#FFBEBEBE"
+                      Fill="#FF333333"
                       Data="{StaticResource WorkspaceFileIconGeometry}" />
 
                 <TextBlock Grid.Column="1"
                            Text="{Binding Name}"
-                           Foreground="#FFF6F6F6"
+                           Foreground="#FF000000"
+                           FontWeight="SemiBold"
                            VerticalAlignment="Center" />
 
                 <Grid.ContextMenu>
@@ -450,12 +451,12 @@
         </HierarchicalDataTemplate>
 
         <DataTemplate DataType="{x:Type wse:WorkspaceSearchResultViewModel}">
-            <TextBlock TextWrapping="Wrap" Foreground="#FFEAEAEA">
+            <TextBlock TextWrapping="Wrap" Foreground="#FF000000" FontWeight="SemiBold">
                 <Run Text="&lt;" />
-                <Run Text="{Binding FileName}" Foreground="#FFBEBEBE" FontWeight="SemiBold" />
+                <Run Text="{Binding FileName}" Foreground="#FF333333" FontWeight="Bold" />
                 <Run Text="&gt; - " />
                 <Run Text="{Binding Before}" />
-                <Run Text="{Binding Match}" Foreground="#FFFFE16A" FontWeight="Bold" />
+                <Run Text="{Binding Match}" Foreground="#FF0066CC" FontWeight="Bold" />
                 <Run Text="{Binding After}" />
             </TextBlock>
         </DataTemplate>
@@ -717,8 +718,8 @@
                 </Border>
 
                 <Border x:Name="WorkspaceExplorerBorder"
-                        Background="#CC1B1B1B"
-                        BorderBrush="#FF4A4A4A"
+                        Background="#FFF5F5F5"
+                        BorderBrush="#FFCCCCCC"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="10"
@@ -737,9 +738,9 @@
 
                         <DockPanel Grid.Row="0" LastChildFill="False">
                             <TextBlock Text="Workspace"
-                                       Foreground="#FFEAEAEA"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       Foreground="#FF000000"
+                                       FontSize="15"
+                                       FontWeight="Bold"
                                        DockPanel.Dock="Left" />
 
                             <Button x:Name="WorkspaceNewButton"
@@ -748,10 +749,11 @@
                                     Width="70"
                                     Height="26"
                                     Margin="10,0,0,0"
-                                    Background="#FF7A7A7A"
-                                    BorderBrush="#FF2D2D2D"
+                                    Background="#FFE0E0E0"
+                                    BorderBrush="#FF999999"
                                     BorderThickness="1"
-                                    Foreground="#FF202020"
+                                    Foreground="#FF000000"
+                                    FontWeight="SemiBold"
                                     Click="WorkspaceNewButton_Click" />
                         </DockPanel>
 
@@ -766,10 +768,11 @@
                             <TextBox x:Name="WorkspaceSearchTextBox"
                                      Grid.Column="0"
                                      Height="28"
-                                     Background="#FF2A2A2A"
-                                     BorderBrush="#FF4A4A4A"
+                                     Background="#FFFFFFFF"
+                                     BorderBrush="#FFCCCCCC"
                                      BorderThickness="1"
-                                     Foreground="#FFF6F6F6"
+                                     Foreground="#FF000000"
+                                     FontWeight="SemiBold"
                                      Padding="6,4"
                                      VerticalContentAlignment="Center"
                                      Text="{Binding WorkspaceExplorer.SearchText, UpdateSourceTrigger=PropertyChanged}">
@@ -781,10 +784,11 @@
                             <ComboBox Grid.Column="1"
                                       Height="28"
                                       Margin="8,0,0,0"
-                                      Background="#FF2A2A2A"
-                                      BorderBrush="#FF4A4A4A"
+                                      Background="#FFFFFFFF"
+                                      BorderBrush="#FFCCCCCC"
                                       BorderThickness="1"
-                                      Foreground="#FFF6F6F6"
+                                      Foreground="#FF000000"
+                                      FontWeight="SemiBold"
                                       ItemsSource="{Binding WorkspaceExplorer.SearchFilters}"
                                       DisplayMemberPath="DisplayName"
                                       SelectedItem="{Binding WorkspaceExplorer.SelectedSearchFilter}" />
@@ -794,10 +798,11 @@
                                     Width="64"
                                     Height="28"
                                     Margin="8,0,0,0"
-                                    Background="#FF7A7A7A"
-                                    BorderBrush="#FF2D2D2D"
+                                    Background="#FFE0E0E0"
+                                    BorderBrush="#FF999999"
                                     BorderThickness="1"
-                                    Foreground="#FF202020"
+                                    Foreground="#FF000000"
+                                    FontWeight="SemiBold"
                                     Command="{Binding WorkspaceExplorer.SearchCommand}" />
 
                             <Button Grid.Column="3"
@@ -805,10 +810,11 @@
                                     Width="28"
                                     Height="28"
                                     Margin="6,0,0,0"
-                                    Background="#FF3A3A3A"
-                                    BorderBrush="#FF2D2D2D"
+                                    Background="#FFE0E0E0"
+                                    BorderBrush="#FF999999"
                                     BorderThickness="1"
-                                    Foreground="#FFF6F6F6"
+                                    Foreground="#FF000000"
+                                    FontWeight="Bold"
                                     Command="{Binding WorkspaceExplorer.ClearSearchCommand}" />
                         </Grid>
 
@@ -817,7 +823,9 @@
                                       ItemsSource="{Binding WorkspaceExplorer.Projects}"
                                       AllowDrop="True"
                                       PreviewMouseLeftButtonDown="WorkspaceExplorerTree_PreviewMouseLeftButtonDown"
+                                      MouseLeftButtonDown="WorkspaceExplorerTree_MouseLeftButtonDown"
                                       MouseMove="WorkspaceExplorerTree_MouseMove"
+                                      MouseLeftButtonUp="WorkspaceExplorerTree_MouseLeftButtonUp"
                                       DragOver="WorkspaceExplorerTree_DragOver"
                                       Drop="WorkspaceExplorerTree_Drop">
                                 <TreeView.Style>
@@ -834,9 +842,126 @@
                                     <Style TargetType="{x:Type TreeViewItem}">
                                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                         <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                                        <Setter Property="Foreground" Value="#FFF6F6F6" />
+                                        <Setter Property="Foreground" Value="#FF000000" />
                                         <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="Padding" Value="2" />
+                                        <Setter Property="Padding" Value="2,0,0,0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" MinWidth="19"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="*"/>
+                                                        </Grid.RowDefinitions>
+                                                        <ToggleButton x:Name="Expander"
+                                                                    Grid.Column="0"
+                                                                    ClickMode="Press"
+                                                                    IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}">
+                                                            <ToggleButton.Style>
+                                                                <Style TargetType="ToggleButton">
+                                                                    <Setter Property="Focusable" Value="False"/>
+                                                                    <Setter Property="Width" Value="16"/>
+                                                                    <Setter Property="Height" Value="16"/>
+                                                                    <Setter Property="Margin" Value="1,0,0,0"/>
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                                    <Setter Property="Template">
+                                                                        <Setter.Value>
+                                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                                <Border Background="Transparent" Width="16" Height="16" SnapsToDevicePixels="true">
+                                                                                    <Path x:Name="ExpandPath" Fill="#FF333333" Data="M 4 0 L 8 4 L 4 8 Z">
+                                                                                        <Path.RenderTransform>
+                                                                                            <RotateTransform Angle="135" CenterX="4" CenterY="4"/>
+                                                                                        </Path.RenderTransform>
+                                                                                    </Path>
+                                                                                </Border>
+                                                                                <ControlTemplate.Triggers>
+                                                                                    <Trigger Property="IsChecked" Value="True">
+                                                                                        <Setter TargetName="ExpandPath" Property="RenderTransform">
+                                                                                            <Setter.Value>
+                                                                                                <RotateTransform Angle="180" CenterX="4" CenterY="4"/>
+                                                                                            </Setter.Value>
+                                                                                        </Setter>
+                                                                                    </Trigger>
+                                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                                        <Setter TargetName="ExpandPath" Property="Fill" Value="#FF000000"/>
+                                                                                    </Trigger>
+                                                                                </ControlTemplate.Triggers>
+                                                                            </ControlTemplate>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </Style>
+                                                            </ToggleButton.Style>
+                                                        </ToggleButton>
+                                                        <Border x:Name="Bd"
+                                                                Grid.Column="1"
+                                                                Grid.ColumnSpan="1"
+                                                                Background="Transparent"
+                                                                BorderBrush="Transparent"
+                                                                BorderThickness="0"
+                                                                Padding="2,0"
+                                                                HorizontalAlignment="Stretch">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                    <Style.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter Property="Background" Value="#FFE8E8E8"/>
+                                                                        </Trigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <ContentPresenter x:Name="PART_Header"
+                                                                            ContentSource="Header"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ItemsPresenter x:Name="ItemsHost"
+                                                                        Grid.Column="1"
+                                                                        Grid.Row="1"/>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="HasItems" Value="False">
+                                                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsExpanded" Value="False">
+                                                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#FFD0E8FF"/>
+                                                        </Trigger>
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="IsSelected" Value="True"/>
+                                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                            </MultiTrigger.Conditions>
+                                                            <Setter TargetName="Bd" Property="Background" Value="#FFB8D8FF"/>
+                                                        </MultiTrigger>
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="HasHeader" Value="False"/>
+                                                                <Condition Property="Width" Value="Auto"/>
+                                                            </MultiTrigger.Conditions>
+                                                            <Setter TargetName="PART_Header" Property="MinWidth" Value="75"/>
+                                                        </MultiTrigger>
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="HasHeader" Value="False"/>
+                                                                <Condition Property="Height" Value="Auto"/>
+                                                            </MultiTrigger.Conditions>
+                                                            <Setter TargetName="PART_Header" Property="MinHeight" Value="19"/>
+                                                        </MultiTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
                                     </Style>
                                 </TreeView.ItemContainerStyle>
                                 <TreeView.ContextMenu>
@@ -851,7 +976,14 @@
                                      ItemsSource="{Binding WorkspaceExplorer.SearchResults}"
                                      Background="Transparent"
                                      BorderThickness="0"
+                                     Foreground="#FF000000"
                                      SelectionChanged="WorkspaceSearchResultsList_SelectionChanged">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ListBoxItem}">
+                                        <Setter Property="Foreground" Value="#FF000000" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.Style>
                                     <Style TargetType="{x:Type ListBox}">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -865,7 +997,8 @@
                             </ListBox>
 
                             <TextBlock Text="Nenhum resultado"
-                                       Foreground="#FFBEBEBE"
+                                       Foreground="#FF666666"
+                                       FontWeight="SemiBold"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center">
                                 <TextBlock.Style>

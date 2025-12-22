@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using RpaInventory.App.WorkspaceExplorer;
 
 namespace RpaInventory.App;
@@ -10,6 +13,9 @@ public partial class MainWindow
     private Point _workspaceExplorerDragStart;
     private WorkspaceTreeNodeViewModel? _workspaceExplorerDragNode;
     private WorkspaceFilePreviewWindow? _workspacePreviewWindow;
+    private bool _workspaceExplorerIsSelecting;
+    private Point _workspaceExplorerSelectionStart;
+    private Point _workspaceExplorerSelectionEnd;
 
     private void WorkspaceNewButton_Click(object sender, RoutedEventArgs e)
     {
@@ -46,10 +52,60 @@ public partial class MainWindow
     {
         _workspaceExplorerDragStart = e.GetPosition((IInputElement)sender);
         _workspaceExplorerDragNode = FindNodeFromEventSource(e.OriginalSource as DependencyObject);
+        
+        // Se clicou em área vazia (não em um item), inicia seleção múltipla
+        if (_workspaceExplorerDragNode is null && sender is TreeView treeView)
+        {
+            var hitTestResult = VisualTreeHelper.HitTest(treeView, _workspaceExplorerDragStart);
+            if (hitTestResult?.VisualHit is not null)
+            {
+                var item = FindAncestor<TreeViewItem>(hitTestResult.VisualHit);
+                if (item is null)
+                {
+                    _workspaceExplorerIsSelecting = true;
+                    _workspaceExplorerSelectionStart = _workspaceExplorerDragStart;
+                    _workspaceExplorerSelectionEnd = _workspaceExplorerDragStart;
+                    treeView.CaptureMouse();
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+    }
+
+    private void WorkspaceExplorerTree_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_workspaceExplorerIsSelecting)
+        {
+            e.Handled = true;
+            return;
+        }
+    }
+
+    private void WorkspaceExplorerTree_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_workspaceExplorerIsSelecting && sender is TreeView treeView)
+        {
+            _workspaceExplorerIsSelecting = false;
+            treeView.ReleaseMouseCapture();
+            
+            // Seleciona todos os itens dentro da área de seleção
+            SelectItemsInRectangle(treeView, _workspaceExplorerSelectionStart, _workspaceExplorerSelectionEnd);
+            
+            e.Handled = true;
+        }
     }
 
     private void WorkspaceExplorerTree_MouseMove(object sender, MouseEventArgs e)
     {
+        if (_workspaceExplorerIsSelecting && sender is TreeView treeView)
+        {
+            _workspaceExplorerSelectionEnd = e.GetPosition((IInputElement)sender);
+            SelectItemsInRectangle(treeView, _workspaceExplorerSelectionStart, _workspaceExplorerSelectionEnd);
+            e.Handled = true;
+            return;
+        }
+
         if (e.LeftButton != MouseButtonState.Pressed || _workspaceExplorerDragNode is null)
             return;
 
@@ -60,6 +116,87 @@ public partial class MainWindow
 
         var data = new DataObject(typeof(WorkspaceTreeNodeViewModel), _workspaceExplorerDragNode);
         DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move);
+    }
+
+    private void SelectItemsInRectangle(TreeView treeView, Point start, Point end)
+    {
+        var explorer = ViewModel?.WorkspaceExplorer;
+        if (explorer is null)
+            return;
+
+        var rect = new Rect(
+            Math.Min(start.X, end.X),
+            Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X),
+            Math.Abs(end.Y - start.Y));
+
+        // Limpa seleção anterior se não estiver com Ctrl
+        if (!Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
+        {
+            foreach (var project in explorer.Projects)
+            {
+                ClearSelection(project);
+            }
+        }
+
+        // Seleciona itens dentro do retângulo
+        foreach (var project in explorer.Projects)
+        {
+            SelectItemsInRectangleRecursive(project, treeView, rect);
+        }
+    }
+
+    private void SelectItemsInRectangleRecursive(WorkspaceTreeNodeViewModel node, TreeView treeView, Rect rect)
+    {
+        var item = FindTreeViewItem(treeView, node);
+        if (item is not null)
+        {
+            var itemRect = new Rect(item.TranslatePoint(new Point(0, 0), treeView), new Size(item.ActualWidth, item.ActualHeight));
+            if (rect.IntersectsWith(itemRect))
+            {
+                node.IsSelected = true;
+            }
+        }
+
+        foreach (var child in node.Children)
+        {
+            SelectItemsInRectangleRecursive(child, treeView, rect);
+        }
+    }
+
+    private void ClearSelection(WorkspaceTreeNodeViewModel node)
+    {
+        node.IsSelected = false;
+        foreach (var child in node.Children)
+        {
+            ClearSelection(child);
+        }
+    }
+
+    private TreeViewItem? FindTreeViewItem(TreeView treeView, WorkspaceTreeNodeViewModel node)
+    {
+        foreach (var item in GetTreeViewItems(treeView))
+        {
+            if (item.DataContext == node)
+                return item;
+        }
+        return null;
+    }
+
+    private IEnumerable<TreeViewItem> GetTreeViewItems(ItemsControl parent)
+    {
+        for (int i = 0; i < parent.Items.Count; i++)
+        {
+            var item = (TreeViewItem)parent.ItemContainerGenerator.ContainerFromIndex(i);
+            if (item != null)
+            {
+                yield return item;
+                foreach (var child in GetTreeViewItems(item))
+                {
+                    yield return child;
+                }
+            }
+        }
     }
 
     private void WorkspaceExplorerTree_DragOver(object sender, DragEventArgs e)

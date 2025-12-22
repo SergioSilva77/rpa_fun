@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using RpaInventory.App.Inventory.ViewModels;
 
@@ -329,35 +332,48 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
 
     public void Search()
     {
-        SearchResults.Clear();
-
-        var query = SearchText.Trim();
-        if (string.IsNullOrWhiteSpace(query))
+        try
         {
+            SearchResults.Clear();
+
+            var query = SearchText?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                IsSearchMode = false;
+                return;
+            }
+
+            if (SelectedSearchFilter is null)
+            {
+                SelectedSearchFilter = SearchFilters.FirstOrDefault() ?? SearchFilters[0];
+            }
+
+            _storage.EnsureRoot();
+
+            const int maxResults = 300;
+            var queryComparison = StringComparison.OrdinalIgnoreCase;
+            var filter = SelectedSearchFilter.Value;
+
+            var results = new List<WorkspaceSearchResultViewModel>(capacity: 64);
+
+            foreach (var projectDir in SafeEnumerateDirectories(RootPath, recursive: false))
+            {
+                if (results.Count >= maxResults)
+                    break;
+
+                SearchDirectory(projectDir, query, queryComparison, filter, results, maxResults);
+            }
+
+            foreach (var result in results)
+                SearchResults.Add(result);
+
+            IsSearchMode = true;
+        }
+        catch (Exception ex)
+        {
+            Dialogs.ShowError("Erro na busca", $"Ocorreu um erro ao buscar: {ex.Message}");
             IsSearchMode = false;
-            return;
         }
-
-        _storage.EnsureRoot();
-
-        const int maxResults = 300;
-        var queryComparison = StringComparison.OrdinalIgnoreCase;
-        var filter = SelectedSearchFilter.Value;
-
-        var results = new List<WorkspaceSearchResultViewModel>(capacity: 64);
-
-        foreach (var projectDir in SafeEnumerateDirectories(RootPath, recursive: false))
-        {
-            if (results.Count >= maxResults)
-                break;
-
-            SearchDirectory(projectDir, query, queryComparison, filter, results, maxResults);
-        }
-
-        foreach (var result in results)
-            SearchResults.Add(result);
-
-        IsSearchMode = true;
     }
 
     public void ClearSearch()
