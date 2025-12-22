@@ -573,7 +573,8 @@
                     <Rectangle Grid.Row="1" Grid.Column="1" Width="14" Height="14" Fill="Transparent" />
                 </Grid>
 
-                <Border Background="#CC1B1B1B"
+        <Border x:Name="WorkspaceHelpBorder"
+                        Background="#CC1B1B1B"
                         BorderBrush="#FF4A4A4A"
                         BorderThickness="1"
                         CornerRadius="8"

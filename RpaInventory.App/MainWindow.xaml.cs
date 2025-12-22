@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Inventory.ViewModels;
 using RpaInventory.App.Settings;
@@ -67,9 +68,31 @@ public partial class MainWindow : Window, IExecutionContext
         {
             WorkspaceCanvas.Focus();
             UpdateScrollbars();
+            ShowWorkspaceHelpTemporarily();
         };
 
         WorkspaceCanvas.SizeChanged += (_, _) => UpdateScrollbars();
+    }
+
+    private void ShowWorkspaceHelpTemporarily()
+    {
+        if (WorkspaceHelpBorder is null)
+            return;
+
+        WorkspaceHelpBorder.Visibility = Visibility.Visible;
+
+        var timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(10),
+        };
+
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            WorkspaceHelpBorder.Visibility = Visibility.Collapsed;
+        };
+
+        timer.Start();
     }
 
     protected override void OnClosed(EventArgs e)
