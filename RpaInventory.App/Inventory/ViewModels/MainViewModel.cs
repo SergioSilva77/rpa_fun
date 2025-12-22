@@ -36,10 +36,27 @@ public sealed class MainViewModel : ViewModelBase
         WorkspaceItems.CollectionChanged += WorkspaceItems_CollectionChanged;
 
         Workspace = new WorkspaceViewModel();
+        InitializeStartShape();
 
         SelectSectionCommand = new RelayCommand<SectionViewModel>(SelectSection);
 
         SelectSection(TopSections.First());
+    }
+
+    private void InitializeStartShape()
+    {
+        const double size = 60;
+        const double margin = 80; // Margem do canto esquerdo e superior
+        
+        var startShape = new WorkspaceShapeViewModel(
+            WorkspaceShapeKind.Start,
+            x: margin,
+            y: margin,
+            width: size,
+            height: size,
+            displayName: "START");
+        
+        Workspace.Shapes.Add(startShape);
     }
 
     public ObservableCollection<SectionViewModel> TopSections { get; }
