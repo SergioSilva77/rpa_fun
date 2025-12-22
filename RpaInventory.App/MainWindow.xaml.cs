@@ -68,31 +68,9 @@ public partial class MainWindow : Window, IExecutionContext
         {
             WorkspaceCanvas.Focus();
             UpdateScrollbars();
-            ShowWorkspaceHelpTemporarily();
         };
 
         WorkspaceCanvas.SizeChanged += (_, _) => UpdateScrollbars();
-    }
-
-    private void ShowWorkspaceHelpTemporarily()
-    {
-        if (WorkspaceHelpBorder is null)
-            return;
-
-        WorkspaceHelpBorder.Visibility = Visibility.Visible;
-
-        var timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(10),
-        };
-
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            WorkspaceHelpBorder.Visibility = Visibility.Collapsed;
-        };
-
-        timer.Start();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -119,8 +97,49 @@ public partial class MainWindow : Window, IExecutionContext
     private static bool IsAltDown()
         => Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt);
 
+    private bool IsWorkspaceExplorerActive()
+        => WorkspaceExplorerBorder?.IsKeyboardFocusWithin == true;
+
+    private static bool IsEditableTextInputFocused()
+    {
+        var focused = Keyboard.FocusedElement;
+        return focused is TextBoxBase { IsReadOnly: false } ||
+               focused is PasswordBox ||
+               focused is ComboBox { IsEditable: true };
+    }
+
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (IsWorkspaceExplorerActive())
+        {
+            if (e.Key == Key.Delete && !e.IsRepeat)
+            {
+                var node = ViewModel?.WorkspaceExplorer.SelectedNode;
+                if (node is not null)
+                {
+                    node.DeleteCommand.Execute(null);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            if (e.Key == Key.F2 && !e.IsRepeat)
+            {
+                var node = ViewModel?.WorkspaceExplorer.SelectedNode;
+                if (node is not null)
+                {
+                    node.RenameCommand.Execute(null);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            return;
+        }
+
+        if (IsEditableTextInputFocused())
+            return;
+
         if (e.Key == Key.Space && !e.IsRepeat)
         {
             _isSpaceDown = true;
@@ -240,14 +259,17 @@ public partial class MainWindow : Window, IExecutionContext
     {
         if (e.Key == Key.Space)
         {
-            _isSpaceDown = false;
-            if (_isPanning)
+            if (_isSpaceDown || _isPanning)
             {
-                _isPanning = false;
-                WorkspaceCanvas.ReleaseMouseCapture();
-                WorkspaceCanvas.Cursor = Cursors.Arrow;
+                _isSpaceDown = false;
+                if (_isPanning)
+                {
+                    _isPanning = false;
+                    WorkspaceCanvas.ReleaseMouseCapture();
+                    WorkspaceCanvas.Cursor = Cursors.Arrow;
+                }
+                e.Handled = true;
             }
-            e.Handled = true;
             return;
         }
 

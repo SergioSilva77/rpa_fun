@@ -6,6 +6,7 @@
         xmlns:inv="clr-namespace:RpaInventory.App.Inventory.Items"
         xmlns:vm="clr-namespace:RpaInventory.App.Inventory.ViewModels"
         xmlns:wvm="clr-namespace:RpaInventory.App.Workspace.ViewModels"
+        xmlns:wse="clr-namespace:RpaInventory.App.WorkspaceExplorer"
         mc:Ignorable="d"
         Title="Inventário RPA"
         Height="720"
@@ -17,6 +18,9 @@
         PreviewKeyUp="MainWindow_PreviewKeyUp">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <Geometry x:Key="WorkspaceFolderIconGeometry">M2,6 H9 L11,8 H22 V20 H2 Z M2,6 V4 H8 L10,6 Z</Geometry>
+        <Geometry x:Key="WorkspaceFileIconGeometry">M6,2 H16 L20,6 V22 H6 Z M16,2 V6 H20</Geometry>
 
         <Style x:Key="SectionButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="44" />
@@ -354,6 +358,107 @@
                 </Ellipse.RenderTransform>
             </Ellipse>
         </DataTemplate>
+
+        <HierarchicalDataTemplate DataType="{x:Type wse:WorkspaceTreeNodeViewModel}"
+                                  ItemsSource="{Binding Children}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Path x:Name="WorkspaceNodeIcon"
+                      Grid.Column="0"
+                      Width="16"
+                      Height="16"
+                      Margin="0,0,6,0"
+                      Fill="#FFBEBEBE"
+                      Data="{StaticResource WorkspaceFileIconGeometry}" />
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Name}"
+                           Foreground="#FFF6F6F6"
+                           VerticalAlignment="Center" />
+
+                <Grid.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Criar arquivo" Command="{Binding CreateFileCommand}">
+                            <MenuItem.Style>
+                                <Style TargetType="{x:Type MenuItem}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Project}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Folder}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+
+                        <MenuItem Header="Criar pasta" Command="{Binding CreateFolderCommand}">
+                            <MenuItem.Style>
+                                <Style TargetType="{x:Type MenuItem}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Project}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Folder}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+
+                        <Separator>
+                            <Separator.Style>
+                                <Style TargetType="{x:Type Separator}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Project}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Folder}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Separator.Style>
+                        </Separator>
+
+                        <MenuItem Header="Renomear" Command="{Binding RenameCommand}" />
+                        <MenuItem Header="Deletar" Command="{Binding DeleteCommand}" />
+                    </ContextMenu>
+                </Grid.ContextMenu>
+            </Grid>
+
+            <HierarchicalDataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Project}">
+                    <Setter TargetName="WorkspaceNodeIcon" Property="Data" Value="{StaticResource WorkspaceFolderIconGeometry}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.Folder}">
+                    <Setter TargetName="WorkspaceNodeIcon" Property="Data" Value="{StaticResource WorkspaceFolderIconGeometry}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Kind}" Value="{x:Static wse:WorkspaceNodeKind.File}">
+                    <Setter TargetName="WorkspaceNodeIcon" Property="Data" Value="{StaticResource WorkspaceFileIconGeometry}" />
+                </DataTrigger>
+            </HierarchicalDataTemplate.Triggers>
+        </HierarchicalDataTemplate>
+
+        <DataTemplate DataType="{x:Type wse:WorkspaceSearchResultViewModel}">
+            <TextBlock TextWrapping="Wrap" Foreground="#FFEAEAEA">
+                <Run Text="&lt;" />
+                <Run Text="{Binding FileName}" Foreground="#FFBEBEBE" FontWeight="SemiBold" />
+                <Run Text="&gt; - " />
+                <Run Text="{Binding Before}" />
+                <Run Text="{Binding Match}" Foreground="#FFFFE16A" FontWeight="Bold" />
+                <Run Text="{Binding After}" />
+            </TextBlock>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Margin="12">
@@ -574,6 +679,7 @@
                 </Grid>
 
         <Border x:Name="WorkspaceHelpBorder"
+                Visibility="Collapsed"
                         Background="#CC1B1B1B"
                         BorderBrush="#FF4A4A4A"
                         BorderThickness="1"
@@ -607,6 +713,204 @@
                             <ItemsControl ItemsSource="{Binding WorkspaceItems}"
                                           ItemTemplate="{StaticResource WorkspaceItemTemplate}" />
                         </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="WorkspaceExplorerBorder"
+                        Background="#CC1B1B1B"
+                        BorderBrush="#FF4A4A4A"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="10"
+                        Margin="12"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Width="360"
+                        Height="620"
+                        Panel.ZIndex="2000">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" LastChildFill="False">
+                            <TextBlock Text="Workspace"
+                                       Foreground="#FFEAEAEA"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       DockPanel.Dock="Left" />
+
+                            <Button x:Name="WorkspaceNewButton"
+                                    DockPanel.Dock="Right"
+                                    Content="Novo"
+                                    Width="70"
+                                    Height="26"
+                                    Margin="10,0,0,0"
+                                    Background="#FF7A7A7A"
+                                    BorderBrush="#FF2D2D2D"
+                                    BorderThickness="1"
+                                    Foreground="#FF202020"
+                                    Click="WorkspaceNewButton_Click" />
+                        </DockPanel>
+
+                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="WorkspaceSearchTextBox"
+                                     Grid.Column="0"
+                                     Height="28"
+                                     Background="#FF2A2A2A"
+                                     BorderBrush="#FF4A4A4A"
+                                     BorderThickness="1"
+                                     Foreground="#FFF6F6F6"
+                                     Padding="6,4"
+                                     VerticalContentAlignment="Center"
+                                     Text="{Binding WorkspaceExplorer.SearchText, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding WorkspaceExplorer.SearchCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
+
+                            <ComboBox Grid.Column="1"
+                                      Height="28"
+                                      Margin="8,0,0,0"
+                                      Background="#FF2A2A2A"
+                                      BorderBrush="#FF4A4A4A"
+                                      BorderThickness="1"
+                                      Foreground="#FFF6F6F6"
+                                      ItemsSource="{Binding WorkspaceExplorer.SearchFilters}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding WorkspaceExplorer.SelectedSearchFilter}" />
+
+                            <Button Grid.Column="2"
+                                    Content="Buscar"
+                                    Width="64"
+                                    Height="28"
+                                    Margin="8,0,0,0"
+                                    Background="#FF7A7A7A"
+                                    BorderBrush="#FF2D2D2D"
+                                    BorderThickness="1"
+                                    Foreground="#FF202020"
+                                    Command="{Binding WorkspaceExplorer.SearchCommand}" />
+
+                            <Button Grid.Column="3"
+                                    Content="X"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="6,0,0,0"
+                                    Background="#FF3A3A3A"
+                                    BorderBrush="#FF2D2D2D"
+                                    BorderThickness="1"
+                                    Foreground="#FFF6F6F6"
+                                    Command="{Binding WorkspaceExplorer.ClearSearchCommand}" />
+                        </Grid>
+
+                        <Grid Grid.Row="2" Margin="0,10,0,0">
+                            <TreeView x:Name="WorkspaceTreeView"
+                                      ItemsSource="{Binding WorkspaceExplorer.Projects}"
+                                      AllowDrop="True"
+                                      PreviewMouseLeftButtonDown="WorkspaceExplorerTree_PreviewMouseLeftButtonDown"
+                                      MouseMove="WorkspaceExplorerTree_MouseMove"
+                                      DragOver="WorkspaceExplorerTree_DragOver"
+                                      Drop="WorkspaceExplorerTree_Drop">
+                                <TreeView.Style>
+                                    <Style TargetType="{x:Type TreeView}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WorkspaceExplorer.IsSearchMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TreeView.Style>
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="{x:Type TreeViewItem}">
+                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                        <Setter Property="Foreground" Value="#FFF6F6F6" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Padding" Value="2" />
+                                    </Style>
+                                </TreeView.ItemContainerStyle>
+                                <TreeView.ContextMenu>
+                                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                        <MenuItem Header="Criar projeto"
+                                                  Command="{Binding WorkspaceExplorer.CreateProjectCommand}" />
+                                    </ContextMenu>
+                                </TreeView.ContextMenu>
+                            </TreeView>
+
+                            <ListBox x:Name="WorkspaceSearchResultsList"
+                                     ItemsSource="{Binding WorkspaceExplorer.SearchResults}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     SelectionChanged="WorkspaceSearchResultsList_SelectionChanged">
+                                <ListBox.Style>
+                                    <Style TargetType="{x:Type ListBox}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WorkspaceExplorer.IsSearchMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.Style>
+                            </ListBox>
+
+                            <TextBlock Text="Nenhum resultado"
+                                       Foreground="#FFBEBEBE"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding WorkspaceExplorer.IsSearchMode}" Value="True" />
+                                                    <Condition Binding="{Binding WorkspaceExplorer.HasSearchResults}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <Button Content="Criar projeto"
+                                    Width="140"
+                                    Height="34"
+                                    Background="#FF1DBA3A"
+                                    BorderBrush="#FF0B4A16"
+                                    BorderThickness="2"
+                                    Foreground="#FFF0F0F0"
+                                    FontWeight="Bold"
+                                    Command="{Binding WorkspaceExplorer.CreateProjectCommand}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding WorkspaceExplorer.HasProjects}" Value="False" />
+                                                    <Condition Binding="{Binding WorkspaceExplorer.IsSearchMode}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>

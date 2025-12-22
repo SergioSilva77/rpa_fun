@@ -4,6 +4,7 @@ using System.Windows.Input;
 using RpaInventory.App.Inventory.Catalog;
 using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Inventory.Sections;
+using RpaInventory.App.WorkspaceExplorer;
 using RpaInventory.App.Workspace.ViewModels;
 
 namespace RpaInventory.App.Inventory.ViewModels;
@@ -21,7 +22,7 @@ public sealed class MainViewModel : ViewModelBase
     private InventorySectionId _selectedSectionId;
     private bool _isInventoryOpen = false;
 
-    public MainViewModel(IInventoryCatalog catalog)
+    public MainViewModel(IInventoryCatalog catalog, IWorkspaceDialogService dialogs)
     {
         _catalog = catalog;
 
@@ -37,6 +38,8 @@ public sealed class MainViewModel : ViewModelBase
 
         Workspace = new WorkspaceViewModel();
         InitializeStartShape();
+
+        WorkspaceExplorer = new WorkspaceExplorerViewModel(dialogs);
 
         SelectSectionCommand = new RelayCommand<SectionViewModel>(SelectSection);
 
@@ -66,6 +69,7 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<SlotViewModel> BackpackSlots { get; }
     public ObservableCollection<IInventoryItem> WorkspaceItems { get; }
     public WorkspaceViewModel Workspace { get; }
+    public WorkspaceExplorerViewModel WorkspaceExplorer { get; }
 
     public ICommand SelectSectionCommand { get; }
 

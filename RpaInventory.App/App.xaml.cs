@@ -1,6 +1,7 @@
 using System.Windows;
 using RpaInventory.App.Inventory.Catalog;
 using RpaInventory.App.Inventory.ViewModels;
+using RpaInventory.App.WorkspaceExplorer;
 
 namespace RpaInventory.App;
 
@@ -14,7 +15,8 @@ public partial class App : Application
         base.OnStartup(e);
 
         var catalog = new ReflectionInventoryCatalog();
-        var mainViewModel = new MainViewModel(catalog);
+        var dialogs = new WorkspaceDialogService();
+        var mainViewModel = new MainViewModel(catalog, dialogs);
 
         var window = new MainWindow
         {
@@ -24,4 +26,3 @@ public partial class App : Application
         window.Show();
     }
 }
-
