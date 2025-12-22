@@ -679,6 +679,31 @@
                     <Rectangle Grid.Row="1" Grid.Column="1" Width="14" Height="14" Fill="Transparent" />
                 </Grid>
 
+        <Button x:Name="WorkspaceExplorerToggleButton"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Margin="12,12,0,0"
+                Width="80"
+                Height="32"
+                Background="#FFF5F5F5"
+                BorderBrush="#FFCCCCCC"
+                BorderThickness="1"
+                Foreground="#FF000000"
+                FontWeight="SemiBold"
+                Panel.ZIndex="2001"
+                Click="WorkspaceToggleButton_Click">
+            <Button.Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Content" Value="Ocultar Workspace" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsWorkspaceExplorerVisible}" Value="False">
+                            <Setter Property="Content" Value="Exibir Workspace" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+
         <Border x:Name="WorkspaceHelpBorder"
                 Visibility="Collapsed"
                         Background="#CC1B1B1B"
@@ -728,7 +753,8 @@
                         VerticalAlignment="Top"
                         Width="360"
                         Height="620"
-                        Panel.ZIndex="2000">
+                        Panel.ZIndex="2000"
+                        Visibility="{Binding IsWorkspaceExplorerVisible, Converter={StaticResource BoolToVisibility}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -748,7 +774,7 @@
                                     Content="Novo"
                                     Width="70"
                                     Height="26"
-                                    Margin="10,0,0,0"
+                                    Margin="5,0,0,0"
                                     Background="#FFE0E0E0"
                                     BorderBrush="#FF999999"
                                     BorderThickness="1"

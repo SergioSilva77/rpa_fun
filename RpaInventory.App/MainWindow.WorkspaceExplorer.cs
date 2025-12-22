@@ -17,6 +17,11 @@ public partial class MainWindow
     private Point _workspaceExplorerSelectionStart;
     private Point _workspaceExplorerSelectionEnd;
 
+    private void WorkspaceToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel?.ToggleWorkspaceExplorer();
+    }
+
     private void WorkspaceNewButton_Click(object sender, RoutedEventArgs e)
     {
         var explorer = ViewModel?.WorkspaceExplorer;

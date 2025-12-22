@@ -21,6 +21,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly IInventoryCatalog _catalog;
     private InventorySectionId _selectedSectionId;
     private bool _isInventoryOpen = false;
+    private bool _isWorkspaceExplorerVisible = true;
 
     public MainViewModel(IInventoryCatalog catalog, IWorkspaceDialogService dialogs)
     {
@@ -85,6 +86,12 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _isInventoryOpen, value);
     }
 
+    public bool IsWorkspaceExplorerVisible
+    {
+        get => _isWorkspaceExplorerVisible;
+        set => SetProperty(ref _isWorkspaceExplorerVisible, value);
+    }
+
     public bool IsWorkspaceEmpty => WorkspaceItems.Count == 0;
 
     public void AddToWorkspace(IInventoryItem item)
@@ -94,6 +101,9 @@ public sealed class MainViewModel : ViewModelBase
 
     public void ToggleInventory()
         => IsInventoryOpen = !IsInventoryOpen;
+
+    public void ToggleWorkspaceExplorer()
+        => IsWorkspaceExplorerVisible = !IsWorkspaceExplorerVisible;
 
     private void SelectSection(SectionViewModel section)
     {
