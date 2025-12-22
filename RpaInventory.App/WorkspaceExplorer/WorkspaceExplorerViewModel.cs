@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Input;
 using RpaInventory.App.Inventory.ViewModels;
 
@@ -332,6 +333,9 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
 
     public void Search()
     {
+        // #region agent log
+        try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:333\",\"message\":\"Search started\",\"data\":{{\"query\":\"{SearchText}\",\"filter\":\"{SelectedSearchFilter?.Value}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"A\"}}\n", Encoding.UTF8); } catch { }
+        // #endregion
         try
         {
             SearchResults.Clear();
@@ -354,23 +358,67 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
             var queryComparison = StringComparison.OrdinalIgnoreCase;
             var filter = SelectedSearchFilter.Value;
 
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:355\",\"message\":\"Before search loop\",\"data\":{{\"filter\":\"{filter}\",\"maxResults\":{maxResults}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"A\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
+
             var results = new List<WorkspaceSearchResultViewModel>(capacity: 64);
+            var projectCount = 0;
 
             foreach (var projectDir in SafeEnumerateDirectories(RootPath, recursive: false))
             {
+                projectCount++;
+                // #region agent log
+                try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:365\",\"message\":\"Searching project\",\"data\":{{\"projectDir\":\"{projectDir}\",\"projectCount\":{projectCount},\"resultsCount\":{results.Count}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"A\"}}\n", Encoding.UTF8); } catch { }
+                // #endregion
                 if (results.Count >= maxResults)
                     break;
 
                 SearchDirectory(projectDir, query, queryComparison, filter, results, maxResults);
             }
 
-            foreach (var result in results)
-                SearchResults.Add(result);
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:373\",\"message\":\"Before adding results\",\"data\":{{\"resultsCount\":{results.Count}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"C\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
+
+            try
+            {
+                var addCount = 0;
+                foreach (var result in results)
+                {
+                    // #region agent log
+                    try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:378\",\"message\":\"Adding result\",\"data\":{{\"addCount\":{addCount},\"resultKind\":\"{result.Kind}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"C\"}}\n", Encoding.UTF8); } catch { }
+                    // #endregion
+                    SearchResults.Add(result);
+                    addCount++;
+                }
+                // #region agent log
+                try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:386\",\"message\":\"Results added\",\"data\":{{\"addedCount\":{addCount},\"finalResultsCount\":{SearchResults.Count}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"C\"}}\n", Encoding.UTF8); } catch { }
+                // #endregion
+            }
+            catch (Exception ex)
+            {
+                // #region agent log
+                try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:391\",\"message\":\"Exception adding results\",\"data\":{{\"exception\":\"{ex.GetType().Name}\",\"message\":\"{ex.Message}\",\"stackTrace\":\"{ex.StackTrace?.Replace("\"", "'")}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"C\"}}\n", Encoding.UTF8); } catch { }
+                // #endregion
+                throw;
+            }
+
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:397\",\"message\":\"Before setting IsSearchMode\",\"data\":{{}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"A\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
 
             IsSearchMode = true;
+
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:402\",\"message\":\"Search completed successfully\",\"data\":{{\"finalResultsCount\":{SearchResults.Count}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"A\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
         }
         catch (Exception ex)
         {
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:387\",\"message\":\"Search exception\",\"data\":{{\"exception\":\"{ex.GetType().Name}\",\"message\":\"{ex.Message}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"E\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
             Dialogs.ShowError("Erro na busca", $"Ocorreu um erro ao buscar: {ex.Message}");
             IsSearchMode = false;
         }
@@ -606,6 +654,9 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
         List<WorkspaceSearchResultViewModel> results,
         int maxResults)
     {
+        // #region agent log
+        try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:590\",\"message\":\"SearchDirectory entry\",\"data\":{{\"directoryPath\":\"{directoryPath}\",\"resultsCount\":{results.Count}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"D\"}}\n", Encoding.UTF8); } catch { }
+        // #endregion
         if (results.Count >= maxResults)
             return;
 
@@ -626,16 +677,26 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
             }
         }
 
+        var dirCount = 0;
         foreach (var dir in SafeEnumerateDirectories(directoryPath, recursive: false))
         {
+            dirCount++;
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:618\",\"message\":\"Recursing into subdirectory\",\"data\":{{\"dir\":\"{dir}\",\"dirCount\":{dirCount}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"D\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
             if (results.Count >= maxResults)
                 return;
 
             SearchDirectory(dir, query, comparison, filter, results, maxResults);
         }
 
+        var fileCount = 0;
         foreach (var file in SafeEnumerateFiles(directoryPath))
         {
+            fileCount++;
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:630\",\"message\":\"Processing file\",\"data\":{{\"file\":\"{file}\",\"fileCount\":{fileCount}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
             if (results.Count >= maxResults)
                 return;
 
@@ -664,6 +725,9 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
 
             TrySearchFileContents(file, fileName, query, comparison, results, maxResults);
         }
+        // #region agent log
+        try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:666\",\"message\":\"SearchDirectory exit\",\"data\":{{\"directoryPath\":\"{directoryPath}\",\"resultsCount\":{results.Count},\"filesProcessed\":{fileCount}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"D\"}}\n", Encoding.UTF8); } catch { }
+        // #endregion
     }
 
     private static void TrySearchFileContents(
@@ -674,16 +738,38 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
         List<WorkspaceSearchResultViewModel> results,
         int maxResults)
     {
+        // #region agent log
+        try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:677\",\"message\":\"TrySearchFileContents entry\",\"data\":{{\"filePath\":\"{filePath}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+        // #endregion
         try
         {
             var fileInfo = new FileInfo(filePath);
             const long maxBytes = 5 * 1024 * 1024; // 5MB
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:684\",\"message\":\"File size check\",\"data\":{{\"filePath\":\"{filePath}\",\"fileSize\":{fileInfo.Length}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
             if (fileInfo.Length > maxBytes)
                 return;
 
+            // Check if file is likely binary
+            if (IsBinaryFile(filePath))
+            {
+                // #region agent log
+                try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:692\",\"message\":\"Skipping binary file\",\"data\":{{\"filePath\":\"{filePath}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+                // #endregion
+                return;
+            }
+
             var lineNumber = 0;
+            var startTime = DateTime.Now;
             foreach (var line in File.ReadLines(filePath))
             {
+                // #region agent log
+                if (lineNumber % 1000 == 0)
+                {
+                    try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:700\",\"message\":\"Reading line\",\"data\":{{\"filePath\":\"{filePath}\",\"lineNumber\":{lineNumber},\"elapsedMs\":{(DateTime.Now - startTime).TotalMilliseconds}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+                }
+                // #endregion
                 if (results.Count >= maxResults)
                     return;
 
@@ -704,10 +790,61 @@ public sealed class WorkspaceExplorerViewModel : ViewModelBase
                     lineNumber: lineNumber,
                     columnIndex: index));
             }
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:720\",\"message\":\"File read completed\",\"data\":{{\"filePath\":\"{filePath}\",\"linesRead\":{lineNumber},\"elapsedMs\":{(DateTime.Now - startTime).TotalMilliseconds}}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"B\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
+        }
+        catch (Exception ex)
+        {
+            // #region agent log
+            try { File.AppendAllText(@"c:\Users\Sérgio\Documents\git\rpa_ultimate\rpa_fun\.cursor\debug.log", $"{{\"id\":\"log_{DateTime.Now.Ticks}\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()},\"location\":\"WorkspaceExplorerViewModel.cs:725\",\"message\":\"File read exception\",\"data\":{{\"filePath\":\"{filePath}\",\"exception\":\"{ex.GetType().Name}\",\"message\":\"{ex.Message}\"}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"E\"}}\n", Encoding.UTF8); } catch { }
+            // #endregion
+            // Ignora arquivos que não são texto / não podem ser lidos.
+        }
+    }
+
+    private static bool IsBinaryFile(string filePath)
+    {
+        try
+        {
+            if (!File.Exists(filePath))
+                return false;
+
+            var fileInfo = new FileInfo(filePath);
+            if (fileInfo.Length == 0)
+                return false; // Empty files are considered text
+
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            var binaryExtensions = new HashSet<string>
+            {
+                ".exe", ".dll", ".so", ".dylib", ".bin", ".obj", ".lib", ".a",
+                ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".ico", ".svg",
+                ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2",
+                ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+                ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".flv",
+                ".db", ".sqlite", ".mdb", ".accdb"
+            };
+            
+            if (binaryExtensions.Contains(extension))
+                return true;
+
+            // Check first 512 bytes for null bytes (common in binary files)
+            using (var stream = File.OpenRead(filePath))
+            {
+                var buffer = new byte[Math.Min(512, (int)fileInfo.Length)];
+                var bytesRead = stream.Read(buffer, 0, buffer.Length);
+                for (int i = 0; i < bytesRead; i++)
+                {
+                    if (buffer[i] == 0)
+                        return true;
+                }
+            }
+            
+            return false;
         }
         catch
         {
-            // Ignora arquivos que não são texto / não podem ser lidos.
+            return true; // Assume binary if we can't check
         }
     }
 
