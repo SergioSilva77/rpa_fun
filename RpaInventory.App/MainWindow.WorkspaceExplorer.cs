@@ -19,7 +19,23 @@ public partial class MainWindow
 
     private void WorkspaceToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel?.ToggleWorkspaceExplorer();
+        if (ViewModel is null)
+            return;
+
+        ViewModel.ToggleWorkspaceExplorer();
+        UpdateWorkspaceToggleButtonPosition();
+    }
+
+    private void UpdateWorkspaceToggleButtonPosition()
+    {
+        if (WorkspaceExplorerToggleButton is null || ViewModel is null)
+            return;
+
+        // Workspace: Margin="12", Width="360" = posição 372 quando visível
+        // Quando oculto, botão vai para posição 12
+        WorkspaceExplorerToggleButton.Margin = ViewModel.IsWorkspaceExplorerVisible
+            ? new Thickness(372, 12, 0, 0)
+            : new Thickness(12, 12, 0, 0);
     }
 
     private void WorkspaceNewButton_Click(object sender, RoutedEventArgs e)

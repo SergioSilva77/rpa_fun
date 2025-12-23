@@ -68,9 +68,27 @@ public partial class MainWindow : Window, IExecutionContext
         {
             WorkspaceCanvas.Focus();
             UpdateScrollbars();
+            SetupWorkspaceToggleButton();
         };
 
         WorkspaceCanvas.SizeChanged += (_, _) => UpdateScrollbars();
+        DataContextChanged += (_, _) => SetupWorkspaceToggleButton();
+    }
+
+    private void SetupWorkspaceToggleButton()
+    {
+        if (ViewModel is null || WorkspaceExplorerToggleButton is null)
+            return;
+
+        // Atualiza posição inicial
+        UpdateWorkspaceToggleButtonPosition();
+
+        // Observa mudanças na propriedade
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ViewModel.IsWorkspaceExplorerVisible))
+                UpdateWorkspaceToggleButtonPosition();
+        };
     }
 
     protected override void OnClosed(EventArgs e)

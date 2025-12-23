@@ -11,8 +11,11 @@
         Title="Inventário RPA"
         Height="720"
         Width="1200"
+        MinHeight="400"
+        MinWidth="800"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow"
         Background="#FF1B1B1B"
         PreviewKeyDown="MainWindow_PreviewKeyDown"
         PreviewKeyUp="MainWindow_PreviewKeyUp">
@@ -21,6 +24,8 @@
 
         <Geometry x:Key="WorkspaceFolderIconGeometry">M2,6 H9 L11,8 H22 V20 H2 Z M2,6 V4 H8 L10,6 Z</Geometry>
         <Geometry x:Key="WorkspaceFileIconGeometry">M6,2 H16 L20,6 V22 H6 Z M16,2 V6 H20</Geometry>
+        <Geometry x:Key="ArrowLeftIconGeometry">M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z</Geometry>
+        <Geometry x:Key="ArrowRightIconGeometry">M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z</Geometry>
 
         <Style x:Key="SectionButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="44" />
@@ -682,26 +687,79 @@
         <Button x:Name="WorkspaceExplorerToggleButton"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Top"
-                Margin="12,12,0,0"
-                Width="80"
-                Height="32"
-                Background="#FFF5F5F5"
-                BorderBrush="#FFCCCCCC"
-                BorderThickness="1"
-                Foreground="#FF000000"
-                FontWeight="SemiBold"
+                Width="16"
+                Height="620"
                 Panel.ZIndex="2001"
-                Click="WorkspaceToggleButton_Click">
+                Click="WorkspaceToggleButton_Click"
+                Cursor="Hand">
             <Button.Style>
                 <Style TargetType="{x:Type Button}">
-                    <Setter Property="Content" Value="Ocultar Workspace" />
+                    <Setter Property="Margin" Value="372,12,0,0"/>
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FFE8E8E8" Offset="0"/>
+                                <GradientStop Color="#FFF5F5F5" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="BorderBrush" Value="#FFCCCCCC" />
+                    <Setter Property="BorderThickness" Value="0,1,1,1" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <Border Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="0,8,8,0">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsWorkspaceExplorerVisible}" Value="False">
-                            <Setter Property="Content" Value="Exibir Workspace" />
+                        <DataTrigger Binding="{Binding DataContext.IsWorkspaceExplorerVisible, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                            <Setter Property="Margin" Value="12,12,0,0"/>
                         </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FFD0D0D0" Offset="0"/>
+                                        <GradientStop Color="#FFE0E0E0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FFC0C0C0" Offset="0"/>
+                                        <GradientStop Color="#FFD0D0D0" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
                     </Style.Triggers>
                 </Style>
             </Button.Style>
+            <Viewbox Width="12" Height="12" Stretch="Uniform">
+                <Path x:Name="ToggleIconPath" 
+                      Fill="#FF555555" 
+                      StrokeThickness="0">
+                    <Path.Style>
+                        <Style TargetType="{x:Type Path}">
+                            <Setter Property="Data" Value="{StaticResource ArrowLeftIconGeometry}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DataContext.IsWorkspaceExplorerVisible, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                                    <Setter Property="Data" Value="{StaticResource ArrowRightIconGeometry}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Path.Style>
+                </Path>
+            </Viewbox>
         </Button>
 
         <Border x:Name="WorkspaceHelpBorder"
