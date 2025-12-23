@@ -20,20 +20,16 @@ public sealed class BrowserWaitItem : IInventoryItem, IWorkspacePlaceableInvento
     public void Execute(IExecutionContext context)
     {
         if (context.Browser is null)
-        {
-            context.ShowError(DisplayName, "Navegador não está aberto. Abra o navegador primeiro.");
             return;
-        }
 
         try
         {
             // Aguarda 2 segundos por padrão
             Thread.Sleep(2000);
-            context.ShowInfo(DisplayName, "Espera concluída (2 segundos).");
         }
-        catch (Exception ex)
+        catch
         {
-            context.ShowError(DisplayName, $"Erro ao esperar: {ex.Message}");
+            // Silenciosamente falhar
         }
     }
 

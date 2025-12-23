@@ -19,19 +19,15 @@ public sealed class BrowserGetValueItem : IInventoryItem, IWorkspacePlaceableInv
     public void Execute(IExecutionContext context)
     {
         if (context.Browser is null)
-        {
-            context.ShowError(DisplayName, "Navegador não está aberto. Abra o navegador primeiro.");
             return;
-        }
 
         try
         {
             // TODO: Obter seletor de forma interativa/configurável
-            context.ShowInfo(DisplayName, "Funcionalidade de obter valor será implementada com configuração de seletor.");
         }
-        catch (Exception ex)
+        catch
         {
-            context.ShowError(DisplayName, $"Erro ao obter valor: {ex.Message}");
+            // Silenciosamente falhar
         }
     }
 

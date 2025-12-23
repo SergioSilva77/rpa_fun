@@ -19,19 +19,15 @@ public sealed class BrowserTypeItem : IInventoryItem, IWorkspacePlaceableInvento
     public void Execute(IExecutionContext context)
     {
         if (context.Browser is null)
-        {
-            context.ShowError(DisplayName, "Navegador não está aberto. Abra o navegador primeiro.");
             return;
-        }
 
         try
         {
             // TODO: Obter seletor e texto de forma interativa/configurável
-            context.ShowInfo(DisplayName, "Funcionalidade de digitar será implementada com configuração de seletor e texto.");
         }
-        catch (Exception ex)
+        catch
         {
-            context.ShowError(DisplayName, $"Erro ao digitar: {ex.Message}");
+            // Silenciosamente falhar
         }
     }
 

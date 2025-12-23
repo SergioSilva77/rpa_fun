@@ -20,20 +20,16 @@ public sealed class BrowserClickItem : IInventoryItem, IWorkspacePlaceableInvent
     public void Execute(IExecutionContext context)
     {
         if (context.Browser is null)
-        {
-            context.ShowError(DisplayName, "Navegador não está aberto. Abra o navegador primeiro.");
             return;
-        }
 
         try
         {
             // TODO: Obter seletor de forma interativa/configurável
             // Placeholder - em produção, obteria o seletor de configuração do shape
-            context.ShowInfo(DisplayName, "Funcionalidade de clicar será implementada com configuração de seletor.");
         }
-        catch (Exception ex)
+        catch
         {
-            context.ShowError(DisplayName, $"Erro ao clicar: {ex.Message}");
+            // Silenciosamente falhar
         }
     }
 

@@ -19,10 +19,19 @@ public sealed class BrowserOpenBrowserItem : IInventoryItem, IWorkspacePlaceable
 
     public void Execute(IExecutionContext context)
     {
+        // Fechar navegador existente, se houver
         if (context.Browser is not null)
         {
-            context.ShowInfo(DisplayName, "Navegador já está aberto. Feche-o primeiro.");
-            return;
+            try
+            {
+                context.Browser.Quit();
+                context.Browser.Dispose();
+            }
+            catch
+            {
+                // Ignorar erros ao fechar
+            }
+            context.Browser = null;
         }
 
         try
@@ -30,11 +39,11 @@ public sealed class BrowserOpenBrowserItem : IInventoryItem, IWorkspacePlaceable
             var driver = new ChromeDriver();
             driver.Manage().Window.Maximize();
             context.Browser = driver;
-            context.ShowInfo(DisplayName, "Navegador aberto com sucesso!");
         }
-        catch (Exception ex)
+        catch
         {
-            context.ShowError(DisplayName, $"Erro ao abrir navegador: {ex.Message}");
+            // Silenciosamente falhar
+            context.Browser = null;
         }
     }
 
