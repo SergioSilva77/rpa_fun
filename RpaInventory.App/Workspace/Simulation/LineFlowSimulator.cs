@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
+using RpaInventory.App.Inventory.Catalog;
+using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Workspace.ViewModels;
 
 namespace RpaInventory.App.Workspace.Simulation;
@@ -13,6 +15,8 @@ public sealed class LineFlowSimulator
     private const double ShapeAnchorQuantizeStep = 1;
 
     private readonly WorkspaceViewModel _workspace;
+    private readonly IInventoryCatalog? _catalog;
+    private readonly IExecutionContext? _executionContext;
     private readonly DispatcherTimer _timer;
     private readonly Stopwatch _stopwatch = new();
     private TimeSpan _lastTick;
@@ -20,9 +24,11 @@ public sealed class LineFlowSimulator
     private readonly List<BallState> _balls = new();
     private WorkspaceGraph _graph = WorkspaceGraph.Empty;
 
-    public LineFlowSimulator(WorkspaceViewModel workspace)
+    public LineFlowSimulator(WorkspaceViewModel workspace, IInventoryCatalog? catalog = null, IExecutionContext? executionContext = null)
     {
         _workspace = workspace;
+        _catalog = catalog;
+        _executionContext = executionContext;
         _timer = new DispatcherTimer(DispatcherPriority.Render)
         {
             Interval = TimeSpan.FromMilliseconds(16),
@@ -146,6 +152,12 @@ public sealed class LineFlowSimulator
             if (ball.Progress < 1)
                 return false;
 
+            // Executar ação se chegou em um shape de Selenium
+            if (edge.To is ShapeAnchorNodeKey shapeKey && shapeKey.Shape is WorkspaceShapeViewModel shape)
+            {
+                TryExecuteShapeAction(shape);
+            }
+
             var nextEdges = _graph
                 .GetOutgoingEdges(edge.To)
                 .Where(e => !Equals(e.To, edge.From))
@@ -173,6 +185,14 @@ public sealed class LineFlowSimulator
         var vm = new WorkspaceBallViewModel(start.X, start.Y);
         _workspace.Balls.Add(vm);
         _balls.Add(new BallState(vm, edge));
+    }
+
+    private void TryExecuteShapeAction(WorkspaceShapeViewModel shape)
+    {
+        if (_catalog is null || _executionContext is null)
+            return;
+
+        SeleniumActionExecutor.TryExecuteAction(shape, _catalog, _executionContext);
     }
 
     private sealed class BallState

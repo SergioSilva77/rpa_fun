@@ -31,10 +31,10 @@ public partial class MainWindow
         if (WorkspaceExplorerToggleButton is null || ViewModel is null)
             return;
 
-        // Workspace: Margin="12", Width="360" = posição 372 quando visível
+        // Workspace: Margin="12", Width="288" = posição 300 quando visível
         // Quando oculto, botão vai para posição 12
         WorkspaceExplorerToggleButton.Margin = ViewModel.IsWorkspaceExplorerVisible
-            ? new Thickness(372, 12, 0, 0)
+            ? new Thickness(300, 12, 0, 0)
             : new Thickness(12, 12, 0, 0);
     }
 

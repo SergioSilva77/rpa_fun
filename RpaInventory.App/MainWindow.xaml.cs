@@ -5,6 +5,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using OpenQA.Selenium;
+using RpaInventory.App.Inventory.Catalog;
 using RpaInventory.App.Inventory.Items;
 using RpaInventory.App.Inventory.ViewModels;
 using RpaInventory.App.Settings;
@@ -60,6 +62,7 @@ public partial class MainWindow : Window, IExecutionContext
 
     private IInventoryItem? _selectedBackpackItem;
     private SettingsViewModel _settings = SettingsViewModel.Default;
+    private IWebDriver? _browserDriver;
 
     public MainWindow()
     {
@@ -94,6 +97,9 @@ public partial class MainWindow : Window, IExecutionContext
     protected override void OnClosed(EventArgs e)
     {
         _lineFlowSimulator?.Stop(clearBalls: true);
+        _browserDriver?.Quit();
+        _browserDriver?.Dispose();
+        _browserDriver = null;
         base.OnClosed(e);
     }
 
@@ -105,6 +111,12 @@ public partial class MainWindow : Window, IExecutionContext
 
     public void ShowError(string title, string message)
         => MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+
+    public IWebDriver? Browser
+    {
+        get => _browserDriver;
+        set => _browserDriver = value;
+    }
 
     private static bool IsCtrlDown()
         => Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
@@ -304,10 +316,11 @@ public partial class MainWindow : Window, IExecutionContext
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        if (Workspace is null)
+        if (Workspace is null || ViewModel is null)
             return;
 
-        _lineFlowSimulator ??= new LineFlowSimulator(Workspace);
+        var catalog = new ReflectionInventoryCatalog();
+        _lineFlowSimulator ??= new LineFlowSimulator(Workspace, catalog, this);
 
         try
         {

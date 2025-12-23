@@ -7,4 +7,9 @@ public enum WorkspaceShapeKind
     Diamond,
     LogicDecision,
     Start,
+    SeleniumOpenBrowser,
+    SeleniumClick,
+    SeleniumWait,
+    SeleniumType,
+    SeleniumGetValue,
 }
